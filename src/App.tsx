@@ -24,6 +24,9 @@ import Settings from "./pages/Settings";
 import OrganizationSettings from "./pages/OrganizationSettings";
 import ProcessingMonitor from "./pages/ProcessingMonitor";
 import ReviewTransfers from "./pages/ReviewTransfers";
+import Expenses from "./pages/Expenses";
+import Employees from "./pages/Employees";
+import Salaries from "./pages/Salaries";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
