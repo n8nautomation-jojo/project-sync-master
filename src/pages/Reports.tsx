@@ -226,9 +226,9 @@ export default function Reports() {
                   </p>
                 </div>
               </div>
-              <div className="text-left">
+              <div className="text-right sm:text-left">
                 <p className="text-sm text-muted-foreground">إجمالي الإيرادات</p>
-                <p className="text-4xl font-bold text-primary">
+                <p className="text-2xl sm:text-4xl font-bold text-primary">
                   {reportData.totalRevenue.toLocaleString()} ج.س
                 </p>
               </div>

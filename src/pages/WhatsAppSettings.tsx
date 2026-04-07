@@ -413,16 +413,16 @@ const WhatsAppSettings = () => {
     <DashboardLayout>
       <div className="space-y-6">
         {/* العنوان */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">
               ربط WhatsApp Business
             </h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-muted-foreground mt-1 text-sm">
               اختر الطريقة المناسبة - Meta Cloud API مجاني وآمن
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-shrink-0">
             <QuickUpload 
               trigger={
                 <Button variant="outline" className="gap-2">
