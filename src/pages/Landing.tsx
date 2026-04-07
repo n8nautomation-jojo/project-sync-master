@@ -417,14 +417,20 @@ const Landing = () => {
               </ul>
             </div>
           </div>
-          <div className="border-t border-border pt-8 text-center text-muted-foreground space-y-1">
-            <p>© {new Date().getFullYear()} حساباتي. جميع الحقوق محفوظة.</p>
-            <p className="text-xs">
-              تم التطوير بواسطة{" "}
-              <a href="https://suda-technologies.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                Suda-Technologies
-              </a>
-            </p>
+          <div className="border-t border-border pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-muted-foreground">
+            <div className="text-center sm:text-right space-y-1">
+              <p>© {new Date().getFullYear()} حساباتي. جميع الحقوق محفوظة.</p>
+              <p className="text-xs">
+                تم التطوير بواسطة{" "}
+                <a href="https://suda-technologies.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                  Suda-Technologies
+                </a>
+              </p>
+            </div>
+            <div className="flex items-center gap-4 text-sm">
+              <a href="/privacy" className="hover:text-foreground transition-colors">سياسة الخصوصية</a>
+              <a href="/terms" className="hover:text-foreground transition-colors">شروط الاستخدام</a>
+            </div>
           </div>
         </div>
       </footer>
