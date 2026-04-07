@@ -122,7 +122,7 @@ export default function Reports() {
             تقارير الإيرادات والتحويلات
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Select value={period} onValueChange={(v) => setPeriod(v as ReportPeriod)}>
             <SelectTrigger className="w-40">
               <Calendar className="w-4 h-4 ml-2" />
