@@ -530,12 +530,10 @@ export type Database = {
       }
       whatsapp_connections: {
         Row: {
-          access_token: string | null
           branch_id: string
           connection_type: string
           created_at: string
           green_api_instance_id: string | null
-          green_api_token: string | null
           id: string
           last_sync_at: string | null
           meta_phone_number_id: string | null
@@ -551,12 +549,10 @@ export type Database = {
           whatsapp_business_id: string | null
         }
         Insert: {
-          access_token?: string | null
           branch_id: string
           connection_type?: string
           created_at?: string
           green_api_instance_id?: string | null
-          green_api_token?: string | null
           id?: string
           last_sync_at?: string | null
           meta_phone_number_id?: string | null
@@ -572,12 +568,10 @@ export type Database = {
           whatsapp_business_id?: string | null
         }
         Update: {
-          access_token?: string | null
           branch_id?: string
           connection_type?: string
           created_at?: string
           green_api_instance_id?: string | null
-          green_api_token?: string | null
           id?: string
           last_sync_at?: string | null
           meta_phone_number_id?: string | null
@@ -605,6 +599,41 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_credentials: {
+        Row: {
+          access_token: string | null
+          connection_id: string
+          created_at: string
+          green_api_token: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          connection_id: string
+          created_at?: string
+          green_api_token?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          connection_id?: string
+          created_at?: string
+          green_api_token?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_credentials_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: true
+            referencedRelation: "whatsapp_connections"
             referencedColumns: ["id"]
           },
         ]
@@ -704,6 +733,10 @@ export type Database = {
           max_users: number
           plan_type: string
         }[]
+      }
+      get_role_level: {
+        Args: { _role: Database["public"]["Enums"]["app_role"] }
+        Returns: number
       }
       get_user_branch_id: {
         Args: { _organization_id: string; _user_id: string }
