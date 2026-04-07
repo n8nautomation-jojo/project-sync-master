@@ -173,6 +173,48 @@ serve(async (req) => {
       }
     }
 
+    // 🔗 DELAYED MEMO LINKING: If this is a text message, check for recent transfers
+    // from the same sender within 10 minutes and update their client_memo
+    const isTextMessage = ["textMessage", "extendedTextMessage"].includes(messageType);
+    if (isTextMessage && content && !content.startsWith("chatId:") && content.trim().length > 0) {
+      try {
+        const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+        const cleanText = String(content).substring(0, 500).trim();
+
+        // Find recent transfers from same sender that don't have a manual memo
+        const { data: recentTransfers } = await sb
+          .from("transfers")
+          .select("id, client_memo, is_manual_memo")
+          .eq("organization_id", connection.organization_id)
+          .eq("sender_phone", fromNumber.substring(0, 50))
+          .eq("is_deleted", false)
+          .eq("is_manual_memo", false)
+          .gte("created_at", tenMinAgo)
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        if (recentTransfers && recentTransfers.length > 0) {
+          const transfer = recentTransfers[0];
+          // Merge: append new text to existing memo, or set as new memo
+          const updatedMemo = transfer.client_memo
+            ? `${transfer.client_memo} | ${cleanText}`
+            : cleanText;
+
+          await sb.from("transfers").update({
+            client_memo: updatedMemo.substring(0, 2000),
+          }).eq("id", transfer.id);
+
+          await logToSystem(sb, "info",
+            `Delayed memo linked: transfer=${transfer.id}, text="${cleanText.substring(0, 100)}"`,
+            { transferId: transfer.id, fromNumber, originalMemo: transfer.client_memo, newText: cleanText },
+            connection.organization_id, connection.id
+          );
+        }
+      } catch (memoErr) {
+        await logToSystem(sb, "warn", `Delayed memo linking failed: ${memoErr?.message}`, { error: memoErr?.message }, connection.organization_id, connection.id);
+      }
+    }
+
     return new Response(JSON.stringify({ status: "received" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
     await logToSystem(sb, "fatal", `Unhandled error: ${error?.message || error}`, { stack: error?.stack });
