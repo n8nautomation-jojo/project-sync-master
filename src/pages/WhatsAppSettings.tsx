@@ -363,7 +363,7 @@ const WhatsAppSettings = () => {
 
     await setupGreenApiWebhook.mutateAsync({
       instanceId: connection.green_api_instance_id,
-      apiToken: connection.green_api_token,
+      apiToken: greenToken,
       webhookUrl,
     });
   };
