@@ -92,9 +92,9 @@ export const useEmployees = () => {
   });
 
   const updateEmployee = useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string } & Record<string, any>) => {
-      const { branches, created_at, employees, ...cleanUpdates } = updates;
-      const { error } = await supabase.from('employees').update(cleanUpdates).eq('id', id);
+    mutationFn: async (params: { id: string; full_name?: string; position?: string; base_salary?: number; phone?: string; is_active?: boolean; branch_id?: string }) => {
+      const { id, ...updates } = params;
+      const { error } = await supabase.from('employees').update(updates).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
