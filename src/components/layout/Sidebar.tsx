@@ -18,6 +18,9 @@ import {
   BarChart3,
   Activity,
   ShieldAlert,
+  Wallet,
+  UserCog,
+  Banknote,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -38,6 +41,9 @@ const menuItems = [
   { icon: Store, label: "الفروع", path: "/branches" },
   { icon: Receipt, label: "التحويلات", path: "/transfers" },
   { icon: ShieldAlert, label: "المراجعة البشرية", path: "/review" },
+  { icon: Wallet, label: "المصروفات", path: "/expenses" },
+  { icon: UserCog, label: "الموظفين", path: "/employees" },
+  { icon: Banknote, label: "الرواتب", path: "/salaries" },
   { icon: BarChart3, label: "الإحصائيات", path: "/statistics" },
   { icon: FileText, label: "التقارير", path: "/reports" },
   { icon: Users, label: "المستخدمين", path: "/users" },
