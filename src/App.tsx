@@ -90,6 +90,15 @@ const App = () => (
               <Route path="/review" element={
                 <ProtectedRoute><ReviewTransfers /></ProtectedRoute>
               } />
+              <Route path="/expenses" element={
+                <ProtectedRoute><Expenses /></ProtectedRoute>
+              } />
+              <Route path="/employees" element={
+                <ProtectedRoute><Employees /></ProtectedRoute>
+              } />
+              <Route path="/salaries" element={
+                <ProtectedRoute><Salaries /></ProtectedRoute>
+              } />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
