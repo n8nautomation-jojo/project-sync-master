@@ -10,10 +10,9 @@ export interface WhatsAppConnection {
   phone_number: string;
   connection_type: "meta" | "green_api" | string;
   whatsapp_business_id: string | null;
-  access_token: string | null;
   webhook_verify_token: string | null;
   green_api_instance_id: string | null;
-  green_api_token: string | null;
+  meta_phone_number_id: string | null;
   status: "connected" | "pending" | "disconnected";
   last_sync_at: string | null;
   verification_code: string | null;
@@ -23,6 +22,11 @@ export interface WhatsAppConnection {
   created_at: string;
   updated_at: string;
   branches?: Branch;
+  // Credentials (only available to owner/admin)
+  credentials?: {
+    access_token: string | null;
+    green_api_token: string | null;
+  } | null;
 }
 
 export const useWhatsAppConnections = () => {
@@ -36,12 +40,16 @@ export const useWhatsAppConnections = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('whatsapp_connections')
-        .select('*, branches(*)')
+        .select('*, branches(*), whatsapp_credentials(*)')
         .eq('organization_id', orgId!)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as WhatsAppConnection[];
+      return (data || []).map((item: any) => ({
+        ...item,
+        credentials: item.whatsapp_credentials?.[0] || item.whatsapp_credentials || null,
+        whatsapp_credentials: undefined,
+      })) as WhatsAppConnection[];
     },
     enabled: !!orgId,
   });
@@ -58,12 +66,12 @@ export const useWhatsAppConnections = () => {
       accessToken: string;
       phoneNumberId: string;
     }) => {
+      // Insert connection first
       const { data, error } = await supabase
         .from('whatsapp_connections')
         .insert({
           branch_id: branchId,
           phone_number: phoneNumber,
-          access_token: accessToken,
           whatsapp_business_id: phoneNumberId,
           webhook_verify_token: "lovable_whatsapp_verify",
           status: 'pending',
@@ -73,6 +81,16 @@ export const useWhatsAppConnections = () => {
         .single();
       
       if (error) throw error;
+
+      // Insert credentials separately
+      const { error: credError } = await supabase
+        .from('whatsapp_credentials')
+        .insert({
+          connection_id: data.id,
+          access_token: accessToken,
+        });
+      
+      if (credError) throw credError;
       return data;
     },
     onSuccess: () => {
@@ -141,21 +159,26 @@ export const useWhatsAppConnections = () => {
 
   const testConnection = useMutation({
     mutationFn: async (id: string) => {
+      // Fetch connection
       const { data: connection, error: fetchError } = await supabase
         .from('whatsapp_connections').select('*').eq('id', id).single();
       if (fetchError || !connection) throw new Error('لم يتم العثور على الاتصال');
       
+      // Fetch credentials
+      const { data: creds } = await supabase
+        .from('whatsapp_credentials').select('*').eq('connection_id', id).single();
+      
       if (connection.connection_type === 'green_api') {
-        if (!connection.green_api_instance_id || !connection.green_api_token) throw new Error('بيانات Green API غير مكتملة');
-        const response = await fetch(`https://api.green-api.com/waInstance${connection.green_api_instance_id}/getStateInstance/${connection.green_api_token}`);
+        if (!connection.green_api_instance_id || !creds?.green_api_token) throw new Error('بيانات Green API غير مكتملة');
+        const response = await fetch(`https://api.green-api.com/waInstance${connection.green_api_instance_id}/getStateInstance/${creds.green_api_token}`);
         if (!response.ok) throw new Error('فشل الاتصال بـ Green API');
         const data = await response.json();
         if (data.stateInstance !== 'authorized') throw new Error(`حالة الاتصال: ${data.stateInstance || 'غير معروف'}`);
         return data;
       } else {
-        if (!connection.whatsapp_business_id || !connection.access_token) throw new Error('بيانات Meta API غير مكتملة');
+        if (!connection.whatsapp_business_id || !creds?.access_token) throw new Error('بيانات Meta API غير مكتملة');
         const response = await fetch(`https://graph.facebook.com/v18.0/${connection.whatsapp_business_id}`, {
-          headers: { 'Authorization': `Bearer ${connection.access_token}` },
+          headers: { 'Authorization': `Bearer ${creds.access_token}` },
         });
         if (!response.ok) {
           const errorData = await response.json();

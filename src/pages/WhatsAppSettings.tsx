@@ -341,7 +341,8 @@ const WhatsAppSettings = () => {
   const handleResetGreenApiWebhook = async (connection: WhatsAppConnection) => {
     if (connection.connection_type !== "green_api") return;
 
-    if (!connection.green_api_instance_id || !connection.green_api_token) {
+    const greenToken = connection.credentials?.green_api_token;
+    if (!connection.green_api_instance_id || !greenToken) {
       toast({
         title: "خطأ",
         description: "بيانات Green API غير مكتملة لهذا الاتصال",
@@ -362,7 +363,7 @@ const WhatsAppSettings = () => {
 
     await setupGreenApiWebhook.mutateAsync({
       instanceId: connection.green_api_instance_id,
-      apiToken: connection.green_api_token,
+      apiToken: greenToken,
       webhookUrl,
     });
   };
@@ -370,7 +371,8 @@ const WhatsAppSettings = () => {
   const handleActivateConnection = async (connection: WhatsAppConnection) => {
     if (connection.connection_type !== "green_api") return;
 
-    if (!connection.green_api_instance_id || !connection.green_api_token) {
+    const greenToken = connection.credentials?.green_api_token;
+    if (!connection.green_api_instance_id || !greenToken) {
       toast({
         title: "خطأ",
         description: "بيانات Green API غير مكتملة لهذا الاتصال",
@@ -381,7 +383,7 @@ const WhatsAppSettings = () => {
 
     await activateConnection.mutateAsync({
       instanceId: connection.green_api_instance_id,
-      apiToken: connection.green_api_token,
+      apiToken: greenToken,
       connectionId: connection.id,
     });
   };

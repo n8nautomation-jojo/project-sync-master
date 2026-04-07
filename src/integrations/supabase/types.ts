@@ -103,6 +103,173 @@ export type Database = {
           },
         ]
       }
+      employees: {
+        Row: {
+          base_salary: number
+          branch_id: string | null
+          created_at: string
+          full_name: string
+          hire_date: string
+          id: string
+          is_active: boolean
+          organization_id: string
+          phone: string | null
+          position: string | null
+          updated_at: string
+        }
+        Insert: {
+          base_salary?: number
+          branch_id?: string | null
+          created_at?: string
+          full_name: string
+          hire_date?: string
+          id?: string
+          is_active?: boolean
+          organization_id: string
+          phone?: string | null
+          position?: string | null
+          updated_at?: string
+        }
+        Update: {
+          base_salary?: number
+          branch_id?: string | null
+          created_at?: string
+          full_name?: string
+          hire_date?: string
+          id?: string
+          is_active?: boolean
+          organization_id?: string
+          phone?: string | null
+          position?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          icon: string | null
+          id: string
+          is_active: boolean
+          is_system: boolean
+          name: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          name: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          name?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      expenses: {
+        Row: {
+          amount: number
+          approved_by: string | null
+          branch_id: string | null
+          category_id: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          deleted_by: string | null
+          description: string | null
+          expense_date: string
+          id: string
+          is_deleted: boolean
+          is_recurring: boolean
+          notes: string | null
+          organization_id: string
+          receipt_image_url: string | null
+          recurrence_type: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          approved_by?: string | null
+          branch_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          description?: string | null
+          expense_date?: string
+          id?: string
+          is_deleted?: boolean
+          is_recurring?: boolean
+          notes?: string | null
+          organization_id: string
+          receipt_image_url?: string | null
+          recurrence_type?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          approved_by?: string | null
+          branch_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          description?: string | null
+          expense_date?: string
+          id?: string
+          is_deleted?: boolean
+          is_recurring?: boolean
+          notes?: string | null
+          organization_id?: string
+          receipt_image_url?: string | null
+          recurrence_type?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       failed_jobs: {
         Row: {
           attempts: number
@@ -272,6 +439,68 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      salary_payments: {
+        Row: {
+          base_amount: number
+          bonuses: number
+          created_at: string
+          deductions: number
+          employee_id: string
+          id: string
+          month: number
+          net_amount: number
+          notes: string | null
+          organization_id: string
+          paid_at: string | null
+          paid_by: string | null
+          status: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          base_amount: number
+          bonuses?: number
+          created_at?: string
+          deductions?: number
+          employee_id: string
+          id?: string
+          month: number
+          net_amount: number
+          notes?: string | null
+          organization_id: string
+          paid_at?: string | null
+          paid_by?: string | null
+          status?: string
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          base_amount?: number
+          bonuses?: number
+          created_at?: string
+          deductions?: number
+          employee_id?: string
+          id?: string
+          month?: number
+          net_amount?: number
+          notes?: string | null
+          organization_id?: string
+          paid_at?: string | null
+          paid_by?: string | null
+          status?: string
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_payments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       system_logs: {
         Row: {
@@ -530,12 +759,10 @@ export type Database = {
       }
       whatsapp_connections: {
         Row: {
-          access_token: string | null
           branch_id: string
           connection_type: string
           created_at: string
           green_api_instance_id: string | null
-          green_api_token: string | null
           id: string
           last_sync_at: string | null
           meta_phone_number_id: string | null
@@ -551,12 +778,10 @@ export type Database = {
           whatsapp_business_id: string | null
         }
         Insert: {
-          access_token?: string | null
           branch_id: string
           connection_type?: string
           created_at?: string
           green_api_instance_id?: string | null
-          green_api_token?: string | null
           id?: string
           last_sync_at?: string | null
           meta_phone_number_id?: string | null
@@ -572,12 +797,10 @@ export type Database = {
           whatsapp_business_id?: string | null
         }
         Update: {
-          access_token?: string | null
           branch_id?: string
           connection_type?: string
           created_at?: string
           green_api_instance_id?: string | null
-          green_api_token?: string | null
           id?: string
           last_sync_at?: string | null
           meta_phone_number_id?: string | null
@@ -605,6 +828,41 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_credentials: {
+        Row: {
+          access_token: string | null
+          connection_id: string
+          created_at: string
+          green_api_token: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          connection_id: string
+          created_at?: string
+          green_api_token?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          connection_id?: string
+          created_at?: string
+          green_api_token?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_credentials_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: true
+            referencedRelation: "whatsapp_connections"
             referencedColumns: ["id"]
           },
         ]
@@ -704,6 +962,10 @@ export type Database = {
           max_users: number
           plan_type: string
         }[]
+      }
+      get_role_level: {
+        Args: { _role: Database["public"]["Enums"]["app_role"] }
+        Returns: number
       }
       get_user_branch_id: {
         Args: { _organization_id: string; _user_id: string }

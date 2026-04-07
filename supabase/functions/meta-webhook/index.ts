@@ -122,10 +122,20 @@ serve(async (req) => {
 
         const { data: connection } = await sb
           .from("whatsapp_connections")
-          .select("id, branch_id, organization_id, access_token, monitored_chat_id")
+          .select("id, branch_id, organization_id, monitored_chat_id")
           .eq("meta_phone_number_id", phoneNumberId)
           .eq("connection_type", "meta")
           .single();
+
+        if (!connection) continue;
+
+        // Fetch access token from credentials table
+        const { data: creds } = await sb
+          .from("whatsapp_credentials")
+          .select("access_token")
+          .eq("connection_id", connection.id)
+          .single();
+        const access_token = creds?.access_token || null;
 
         if (!connection) continue;
 

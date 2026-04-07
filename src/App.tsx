@@ -8,6 +8,8 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import Terms from "./pages/Terms";
 import Onboarding from "./pages/Onboarding";
 import SelectOrganization from "./pages/SelectOrganization";
 import Dashboard from "./pages/Dashboard";
@@ -22,6 +24,9 @@ import Settings from "./pages/Settings";
 import OrganizationSettings from "./pages/OrganizationSettings";
 import ProcessingMonitor from "./pages/ProcessingMonitor";
 import ReviewTransfers from "./pages/ReviewTransfers";
+import Expenses from "./pages/Expenses";
+import Employees from "./pages/Employees";
+import Salaries from "./pages/Salaries";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +42,8 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<Terms />} />
               <Route path="/onboarding" element={
                 <ProtectedRoute requireOrganization={false}>
                   <Onboarding />
@@ -82,6 +89,15 @@ const App = () => (
               } />
               <Route path="/review" element={
                 <ProtectedRoute><ReviewTransfers /></ProtectedRoute>
+              } />
+              <Route path="/expenses" element={
+                <ProtectedRoute><Expenses /></ProtectedRoute>
+              } />
+              <Route path="/employees" element={
+                <ProtectedRoute><Employees /></ProtectedRoute>
+              } />
+              <Route path="/salaries" element={
+                <ProtectedRoute><Salaries /></ProtectedRoute>
               } />
               <Route path="*" element={<NotFound />} />
             </Routes>
