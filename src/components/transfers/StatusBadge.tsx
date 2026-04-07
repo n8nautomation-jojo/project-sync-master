@@ -15,7 +15,7 @@ export function getTransferStatus(transfer: Transfer): TransferStatus {
   }
   
   // 3. إذا فشلت العملية أو تم رفضها
-  if (transfer.status === "failed") return "unconfirmed";
+  if ((transfer as any).status === "failed") return "unconfirmed";
   
   // 4. حالة افتراضية
   return "needs_action";
