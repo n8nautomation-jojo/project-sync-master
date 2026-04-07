@@ -341,7 +341,8 @@ const WhatsAppSettings = () => {
   const handleResetGreenApiWebhook = async (connection: WhatsAppConnection) => {
     if (connection.connection_type !== "green_api") return;
 
-    if (!connection.green_api_instance_id || !connection.green_api_token) {
+    const greenToken = connection.credentials?.green_api_token;
+    if (!connection.green_api_instance_id || !greenToken) {
       toast({
         title: "خطأ",
         description: "بيانات Green API غير مكتملة لهذا الاتصال",
