@@ -33,7 +33,7 @@ serve(async (req) => {
     // Get connection (RLS ensures user can only see their org's connections)
     const { data: connection, error: connError } = await sb
       .from("whatsapp_connections")
-      .select("id, connection_type, green_api_instance_id, green_api_token, access_token, whatsapp_business_id")
+      .select("id, connection_type, green_api_instance_id, whatsapp_business_id")
       .eq("id", connectionId)
       .single();
 
@@ -41,15 +41,22 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Connection not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // Fetch credentials from separate table
+    const { data: creds } = await sb
+      .from("whatsapp_credentials")
+      .select("access_token, green_api_token")
+      .eq("connection_id", connectionId)
+      .single();
+
     let groups: { id: string; name: string; participantsCount?: number }[] = [];
 
     if (connection.connection_type === "green_api") {
-      if (!connection.green_api_instance_id || !connection.green_api_token) {
+      if (!connection.green_api_instance_id || !creds?.green_api_token) {
         return new Response(JSON.stringify({ error: "Green API credentials missing" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
       const response = await fetch(
-        `https://api.green-api.com/waInstance${connection.green_api_instance_id}/getChats/${connection.green_api_token}`
+        `https://api.green-api.com/waInstance${connection.green_api_instance_id}/getChats/${creds.green_api_token}`
       );
 
       if (!response.ok) {

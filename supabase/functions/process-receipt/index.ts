@@ -263,7 +263,7 @@ async function processMessage(sb: any, msg: any): Promise<{ status: string; mess
   try {
     const { data: connection } = await sb
       .from("whatsapp_connections")
-      .select("id, branch_id, organization_id, access_token, connection_type, monitored_chat_id")
+      .select("id, branch_id, organization_id, connection_type, monitored_chat_id")
       .eq("id", msg.whatsapp_connection_id)
       .single();
 
@@ -272,8 +272,15 @@ async function processMessage(sb: any, msg: any): Promise<{ status: string; mess
       return { status: "no_connection", messageId };
     }
 
+    // Fetch access token from credentials table
+    const { data: creds } = await sb
+      .from("whatsapp_credentials")
+      .select("access_token")
+      .eq("connection_id", connection.id)
+      .single();
+
     // Download image
-    const imageData = await downloadImage(msg.media_url, connection.access_token);
+    const imageData = await downloadImage(msg.media_url, creds?.access_token || null);
     if (!imageData) {
       await sb.from("failed_jobs").insert({
         job_type: "image_download",
