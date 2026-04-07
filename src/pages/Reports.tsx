@@ -122,7 +122,7 @@ export default function Reports() {
             تقارير الإيرادات والتحويلات
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Select value={period} onValueChange={(v) => setPeriod(v as ReportPeriod)}>
             <SelectTrigger className="w-40">
               <Calendar className="w-4 h-4 ml-2" />
@@ -203,8 +203,8 @@ export default function Reports() {
       ) : (
         <div className="space-y-6">
           {/* Report Header */}
-          <div className="bg-card rounded-2xl shadow-soft border border-border/50 p-8">
-            <div className="flex items-center justify-between mb-6">
+          <div className="bg-card rounded-2xl shadow-soft border border-border/50 p-4 sm:p-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <div className="flex items-center gap-4">
                 <img src={logo} alt="حساباتي" className="w-16 h-16 rounded-2xl" />
                 <div>
@@ -226,9 +226,9 @@ export default function Reports() {
                   </p>
                 </div>
               </div>
-              <div className="text-left">
+              <div className="text-right sm:text-left">
                 <p className="text-sm text-muted-foreground">إجمالي الإيرادات</p>
-                <p className="text-4xl font-bold text-primary">
+                <p className="text-2xl sm:text-4xl font-bold text-primary">
                   {reportData.totalRevenue.toLocaleString()} ج.س
                 </p>
               </div>
