@@ -15,8 +15,12 @@ import {
   Receipt,
   Clock,
   Calendar,
+  Wallet,
+  TrendingDown,
+  PiggyBank,
 } from "lucide-react";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { useCurrentMonthFinancials } from "@/hooks/useFinancialStats";
 import { DashboardSkeleton } from "@/components/ui/page-skeleton";
 import { useBranches } from "@/hooks/useBranches";
 import { format } from "date-fns";
