@@ -27,6 +27,7 @@ import ReviewTransfers from "./pages/ReviewTransfers";
 import Expenses from "./pages/Expenses";
 import Employees from "./pages/Employees";
 import Salaries from "./pages/Salaries";
+import FinancialReports from "./pages/FinancialReports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -98,6 +99,9 @@ const App = () => (
               } />
               <Route path="/salaries" element={
                 <ProtectedRoute><Salaries /></ProtectedRoute>
+              } />
+              <Route path="/financial-reports" element={
+                <ProtectedRoute><FinancialReports /></ProtectedRoute>
               } />
               <Route path="*" element={<NotFound />} />
             </Routes>
