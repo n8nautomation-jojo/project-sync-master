@@ -124,6 +124,33 @@ export default function Dashboard() {
           />
         </div>
 
+        {/* Financial Summary Row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <StatCard
+            title="مصروفات الشهر"
+            value={`${(financials?.expenses || 0).toLocaleString()} ج.س`}
+            change="المصروفات التشغيلية"
+            changeType="negative"
+            icon={Wallet}
+            iconColor="destructive"
+          />
+          <StatCard
+            title="رواتب الشهر"
+            value={`${(financials?.salaries || 0).toLocaleString()} ج.س`}
+            change="الرواتب المدفوعة"
+            changeType="neutral"
+            icon={Banknote}
+            iconColor="warning"
+          />
+          <StatCard
+            title="صافي الربح"
+            value={`${(financials?.netProfit || 0).toLocaleString()} ج.س`}
+            change="إيرادات - مصروفات - رواتب"
+            changeType={(financials?.netProfit || 0) >= 0 ? "positive" : "negative"}
+            icon={PiggyBank}
+            iconColor={(financials?.netProfit || 0) >= 0 ? "success" : "destructive"}
+          />
+        </div>
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Transfers - Takes 2 columns */}
