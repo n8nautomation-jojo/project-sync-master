@@ -38,6 +38,7 @@ export default function Dashboard() {
   const [selectedBranch, setSelectedBranch] = useState("all");
   
   const { data: stats, isLoading } = useDashboardStats({ timePeriod, branchId: selectedBranch });
+  const { data: financials } = useCurrentMonthFinancials();
   const { branches } = useBranches();
 
   const today = format(new Date(), "EEEE، d MMMM yyyy", { locale: ar });
