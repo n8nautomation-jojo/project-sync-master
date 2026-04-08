@@ -200,15 +200,23 @@ serve(async (req) => {
             ? `${transfer.client_memo} | ${cleanText}`
             : cleanText;
 
-          await sb.from("transfers").update({
+          const { error: updateErr } = await sb.from("transfers").update({
             client_memo: updatedMemo.substring(0, 2000),
           }).eq("id", transfer.id);
 
-          await logToSystem(sb, "info",
-            `Delayed memo linked: transfer=${transfer.id}, text="${cleanText.substring(0, 100)}"`,
-            { transferId: transfer.id, fromNumber, originalMemo: transfer.client_memo, newText: cleanText },
-            connection.organization_id, connection.id
-          );
+          if (updateErr) {
+            await logToSystem(sb, "error",
+              `Delayed memo update FAILED: transfer=${transfer.id}, error=${updateErr.message}`,
+              { transferId: transfer.id, error: updateErr.message, fromNumber },
+              connection.organization_id, connection.id
+            );
+          } else {
+            await logToSystem(sb, "info",
+              `Delayed memo linked: transfer=${transfer.id}, text="${cleanText.substring(0, 100)}"`,
+              { transferId: transfer.id, fromNumber, originalMemo: transfer.client_memo, newText: cleanText },
+              connection.organization_id, connection.id
+            );
+          }
         }
       } catch (memoErr) {
         await logToSystem(sb, "warn", `Delayed memo linking failed: ${memoErr?.message}`, { error: memoErr?.message }, connection.organization_id, connection.id);

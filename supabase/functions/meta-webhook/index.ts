@@ -174,6 +174,42 @@ serve(async (req) => {
           });
 
           if (!insertError) savedCount++;
+
+          // 🔗 DELAYED MEMO LINKING for text messages
+          const isTextMsg = ["text", "textMessage", "extendedTextMessage"].includes(String(messageType));
+          if (isTextMsg && content && !content.startsWith("chatId:") && content.trim().length > 0) {
+            try {
+              const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+              const cleanText = String(content).substring(0, 500).trim();
+              const { data: recentTransfers } = await sb
+                .from("transfers")
+                .select("id, client_memo, is_manual_memo")
+                .eq("organization_id", connection.organization_id)
+                .eq("sender_phone", fromNumber.substring(0, 50))
+                .eq("is_deleted", false)
+                .eq("is_manual_memo", false)
+                .gte("created_at", tenMinAgo)
+                .order("created_at", { ascending: false })
+                .limit(1);
+
+              if (recentTransfers && recentTransfers.length > 0) {
+                const transfer = recentTransfers[0];
+                const updatedMemo = transfer.client_memo
+                  ? `${transfer.client_memo} | ${cleanText}`
+                  : cleanText;
+                await sb.from("transfers").update({
+                  client_memo: updatedMemo.substring(0, 2000),
+                }).eq("id", transfer.id);
+                await logToSystem(sb, "info",
+                  `Delayed memo linked: transfer=${transfer.id}, text="${cleanText.substring(0, 100)}"`,
+                  { transferId: transfer.id, fromNumber, newText: cleanText },
+                  connection.organization_id, connection.id
+                );
+              }
+            } catch (memoErr: any) {
+              await logToSystem(sb, "warn", `Delayed memo linking failed: ${memoErr?.message}`, {}, connection.organization_id, connection.id);
+            }
+          }
         }
 
         // Update last sync
