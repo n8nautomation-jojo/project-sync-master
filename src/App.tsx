@@ -27,6 +27,7 @@ import ReviewTransfers from "./pages/ReviewTransfers";
 import Expenses from "./pages/Expenses";
 import Employees from "./pages/Employees";
 import Salaries from "./pages/Salaries";
+import FinancialReports from "./pages/FinancialReports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
