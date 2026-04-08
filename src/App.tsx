@@ -100,6 +100,9 @@ const App = () => (
               <Route path="/salaries" element={
                 <ProtectedRoute><Salaries /></ProtectedRoute>
               } />
+              <Route path="/financial-reports" element={
+                <ProtectedRoute><FinancialReports /></ProtectedRoute>
+              } />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
