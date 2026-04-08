@@ -103,6 +103,21 @@ export const useEmployees = () => {
     },
   });
 
+  const deleteEmployee = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('employees').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employees', orgId] });
+      queryClient.invalidateQueries({ queryKey: ['salary-payments', orgId] });
+      toast({ title: "تم الحذف", description: "تم حذف الموظف بنجاح" });
+    },
+    onError: () => {
+      toast({ title: "خطأ", description: "فشل في حذف الموظف. قد يكون مرتبطاً بسجلات رواتب.", variant: "destructive" });
+    },
+  });
+
   const addSalaryPayment = useMutation({
     mutationFn: async (payment: {
       employee_id: string;
@@ -140,7 +155,7 @@ export const useEmployees = () => {
   return {
     employees, isLoading,
     salaryPayments, salariesLoading,
-    addEmployee, updateEmployee,
+    addEmployee, updateEmployee, deleteEmployee,
     addSalaryPayment,
     totalSalaries,
   };
