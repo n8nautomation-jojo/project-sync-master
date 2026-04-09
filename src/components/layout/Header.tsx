@@ -107,7 +107,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
           )}
 
           {/* Notifications */}
-          <Popover>
+          <Popover onOpenChange={(open) => { if (open && unreadCount > 0) markAllAsRead.mutate(); }}>
             <PopoverTrigger asChild>
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="w-5 h-5" />
