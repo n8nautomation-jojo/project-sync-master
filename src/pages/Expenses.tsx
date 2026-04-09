@@ -162,7 +162,7 @@ const Expenses = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">إجمالي المصروفات</p>
-                <p className="text-xl font-bold">{totalExpenses.toLocaleString()} ر.س</p>
+                <p className="text-xl font-bold"><p className="text-xl font-bold">{totalExpenses.toLocaleString()} ج.س</p></p>
               </div>
             </CardContent>
           </Card>
