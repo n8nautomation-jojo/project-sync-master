@@ -162,7 +162,7 @@ const Expenses = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">إجمالي المصروفات</p>
-                <p className="text-xl font-bold">{totalExpenses.toLocaleString()} ر.س</p>
+                <p className="text-xl font-bold"><p className="text-xl font-bold">{totalExpenses.toLocaleString()} ج.س</p></p>
               </div>
             </CardContent>
           </Card>
@@ -237,7 +237,7 @@ const Expenses = () => {
                         ) : "—"}
                       </TableCell>
                       <TableCell>{expense.branches?.name || "—"}</TableCell>
-                      <TableCell className="font-semibold text-destructive">{Number(expense.amount).toLocaleString()} ر.س</TableCell>
+                      <TableCell className="font-semibold text-destructive"><TableCell className="font-semibold text-destructive">{Number(expense.amount).toLocaleString()} ج.س</TableCell></TableCell>
                       <TableCell>
                         <Button variant="ghost" size="icon" onClick={() => deleteExpense.mutate(expense.id)}>
                           <Trash2 className="h-4 w-4 text-destructive" />

@@ -165,7 +165,7 @@ const Employees = () => {
               <div className="p-2 bg-amber-100 dark:bg-amber-900/20 rounded-lg"><UserX className="h-5 w-5 text-amber-600" /></div>
               <div>
                 <p className="text-sm text-muted-foreground">إجمالي الرواتب الشهرية</p>
-                <p className="text-xl font-bold">{totalSalaries.toLocaleString()} ر.س</p>
+                <p className="text-xl font-bold"><p className="text-xl font-bold">{totalSalaries.toLocaleString()} ج.س</p></p>
               </div>
             </CardContent>
           </Card>
@@ -196,7 +196,7 @@ const Employees = () => {
                       <TableCell className="font-medium">{emp.full_name}</TableCell>
                       <TableCell>{emp.position || "—"}</TableCell>
                       <TableCell>{emp.branches?.name || "—"}</TableCell>
-                      <TableCell className="font-semibold">{Number(emp.base_salary).toLocaleString()} ر.س</TableCell>
+                      <TableCell className="font-semibold"><TableCell className="font-semibold">{Number(emp.base_salary).toLocaleString()} ج.س</TableCell></TableCell>
                       <TableCell className="hidden sm:table-cell">{format(new Date(emp.hire_date), "dd MMM yyyy", { locale: ar })}</TableCell>
                       <TableCell>
                         <Badge variant={emp.is_active ? "default" : "secondary"}>

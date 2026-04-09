@@ -71,7 +71,7 @@ const Salaries = () => {
                     <SelectTrigger><SelectValue placeholder="اختر الموظف" /></SelectTrigger>
                     <SelectContent>
                       {employees.filter(e => e.is_active).map(e => (
-                        <SelectItem key={e.id} value={e.id}>{e.full_name} — {Number(e.base_salary).toLocaleString()} ر.س</SelectItem>
+                        <SelectItem key={e.id} value={e.id}>{e.full_name} — <SelectItem key={e.id} value={e.id}>{e.full_name} — {Number(e.base_salary).toLocaleString()} ج.س</SelectItem></SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -93,7 +93,7 @@ const Salaries = () => {
                 </div>
                 {selectedEmployee && (
                   <div className="bg-muted/50 p-3 rounded-lg text-sm space-y-1">
-                    <p>الراتب الأساسي: <span className="font-bold">{baseAmount.toLocaleString()} ر.س</span></p>
+                    <p>الراتب الأساسي: <span className="font-bold"><p>الراتب الأساسي: <span className="font-bold">{baseAmount.toLocaleString()} ج.س</span></p></span></p>
                   </div>
                 )}
                 <div className="grid grid-cols-2 gap-3">
@@ -109,7 +109,7 @@ const Salaries = () => {
                 {selectedEmployee && (
                   <div className="bg-primary/5 p-3 rounded-lg text-center">
                     <p className="text-sm text-muted-foreground">صافي الراتب</p>
-                    <p className="text-2xl font-bold text-primary">{netAmount.toLocaleString()} ر.س</p>
+                    <p className="text-2xl font-bold text-primary"><p className="text-2xl font-bold text-primary">{netAmount.toLocaleString()} ج.س</p></p>
                   </div>
                 )}
                 <Textarea placeholder="ملاحظات (اختياري)" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
@@ -127,7 +127,7 @@ const Salaries = () => {
               <div className="p-2 bg-primary/10 rounded-lg"><Wallet className="h-5 w-5 text-primary" /></div>
               <div>
                 <p className="text-sm text-muted-foreground">إجمالي المدفوعات</p>
-                <p className="text-xl font-bold">{totalSalaries.toLocaleString()} ر.س</p>
+                <p className="text-xl font-bold"><p className="text-xl font-bold">{totalSalaries.toLocaleString()} ج.س</p></p>
               </div>
             </CardContent>
           </Card>
@@ -178,7 +178,7 @@ const Salaries = () => {
                       <TableCell>{Number(p.base_amount).toLocaleString()}</TableCell>
                       <TableCell className="text-destructive">{Number(p.deductions) > 0 ? `-${Number(p.deductions).toLocaleString()}` : "—"}</TableCell>
                       <TableCell className="text-green-600">{Number(p.bonuses) > 0 ? `+${Number(p.bonuses).toLocaleString()}` : "—"}</TableCell>
-                      <TableCell className="font-bold">{Number(p.net_amount).toLocaleString()} ر.س</TableCell>
+                      <TableCell className="font-bold"><TableCell className="font-bold">{Number(p.net_amount).toLocaleString()} ج.س</TableCell></TableCell>
                       <TableCell>
                         <Badge variant={p.status === 'paid' ? "default" : "secondary"}>
                           {p.status === 'paid' ? "مدفوع" : "قيد الانتظار"}
