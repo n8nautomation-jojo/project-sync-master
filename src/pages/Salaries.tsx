@@ -178,7 +178,7 @@ const Salaries = () => {
                       <TableCell>{Number(p.base_amount).toLocaleString()}</TableCell>
                       <TableCell className="text-destructive">{Number(p.deductions) > 0 ? `-${Number(p.deductions).toLocaleString()}` : "—"}</TableCell>
                       <TableCell className="text-green-600">{Number(p.bonuses) > 0 ? `+${Number(p.bonuses).toLocaleString()}` : "—"}</TableCell>
-                      <TableCell className="font-bold">{Number(p.net_amount).toLocaleString()} ر.س</TableCell>
+                      <TableCell className="font-bold"><TableCell className="font-bold">{Number(p.net_amount).toLocaleString()} ج.س</TableCell></TableCell>
                       <TableCell>
                         <Badge variant={p.status === 'paid' ? "default" : "secondary"}>
                           {p.status === 'paid' ? "مدفوع" : "قيد الانتظار"}

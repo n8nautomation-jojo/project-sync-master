@@ -196,7 +196,7 @@ const Employees = () => {
                       <TableCell className="font-medium">{emp.full_name}</TableCell>
                       <TableCell>{emp.position || "—"}</TableCell>
                       <TableCell>{emp.branches?.name || "—"}</TableCell>
-                      <TableCell className="font-semibold">{Number(emp.base_salary).toLocaleString()} ر.س</TableCell>
+                      <TableCell className="font-semibold"><TableCell className="font-semibold">{Number(emp.base_salary).toLocaleString()} ج.س</TableCell></TableCell>
                       <TableCell className="hidden sm:table-cell">{format(new Date(emp.hire_date), "dd MMM yyyy", { locale: ar })}</TableCell>
                       <TableCell>
                         <Badge variant={emp.is_active ? "default" : "secondary"}>
