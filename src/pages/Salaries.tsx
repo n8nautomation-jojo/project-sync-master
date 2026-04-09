@@ -109,7 +109,7 @@ const Salaries = () => {
                 {selectedEmployee && (
                   <div className="bg-primary/5 p-3 rounded-lg text-center">
                     <p className="text-sm text-muted-foreground">صافي الراتب</p>
-                    <p className="text-2xl font-bold text-primary">{netAmount.toLocaleString()} ر.س</p>
+                    <p className="text-2xl font-bold text-primary"><p className="text-2xl font-bold text-primary">{netAmount.toLocaleString()} ج.س</p></p>
                   </div>
                 )}
                 <Textarea placeholder="ملاحظات (اختياري)" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
