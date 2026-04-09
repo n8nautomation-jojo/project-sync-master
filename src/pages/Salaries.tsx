@@ -71,7 +71,7 @@ const Salaries = () => {
                     <SelectTrigger><SelectValue placeholder="اختر الموظف" /></SelectTrigger>
                     <SelectContent>
                       {employees.filter(e => e.is_active).map(e => (
-                        <SelectItem key={e.id} value={e.id}>{e.full_name} — {Number(e.base_salary).toLocaleString()} ر.س</SelectItem>
+                        <SelectItem key={e.id} value={e.id}>{e.full_name} — <SelectItem key={e.id} value={e.id}>{e.full_name} — {Number(e.base_salary).toLocaleString()} ج.س</SelectItem></SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
