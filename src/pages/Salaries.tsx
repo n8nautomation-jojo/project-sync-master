@@ -93,7 +93,7 @@ const Salaries = () => {
                 </div>
                 {selectedEmployee && (
                   <div className="bg-muted/50 p-3 rounded-lg text-sm space-y-1">
-                    <p>الراتب الأساسي: <span className="font-bold">{baseAmount.toLocaleString()} ر.س</span></p>
+                    <p>الراتب الأساسي: <span className="font-bold"><p>الراتب الأساسي: <span className="font-bold">{baseAmount.toLocaleString()} ج.س</span></p></span></p>
                   </div>
                 )}
                 <div className="grid grid-cols-2 gap-3">
