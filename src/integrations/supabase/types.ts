@@ -413,6 +413,94 @@ export type Database = {
         }
         Relationships: []
       }
+      print_orders: {
+        Row: {
+          branch_id: string | null
+          commission_rate: number
+          created_at: string
+          customer_name: string
+          designer_id: string | null
+          file_path: string | null
+          height: number
+          id: string
+          material_type: string
+          notes: string | null
+          organization_id: string
+          printer_id: string | null
+          quantity: number
+          status: string
+          total_area: number | null
+          total_price: number | null
+          unit_price: number
+          updated_at: string
+          width: number
+        }
+        Insert: {
+          branch_id?: string | null
+          commission_rate?: number
+          created_at?: string
+          customer_name: string
+          designer_id?: string | null
+          file_path?: string | null
+          height?: number
+          id?: string
+          material_type?: string
+          notes?: string | null
+          organization_id: string
+          printer_id?: string | null
+          quantity?: number
+          status?: string
+          total_area?: number | null
+          total_price?: number | null
+          unit_price?: number
+          updated_at?: string
+          width?: number
+        }
+        Update: {
+          branch_id?: string | null
+          commission_rate?: number
+          created_at?: string
+          customer_name?: string
+          designer_id?: string | null
+          file_path?: string | null
+          height?: number
+          id?: string
+          material_type?: string
+          notes?: string | null
+          organization_id?: string
+          printer_id?: string | null
+          quantity?: number
+          status?: string
+          total_area?: number | null
+          total_price?: number | null
+          unit_price?: number
+          updated_at?: string
+          width?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "print_orders_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print_orders_designer_id_fkey"
+            columns: ["designer_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print_orders_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
