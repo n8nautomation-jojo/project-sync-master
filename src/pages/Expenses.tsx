@@ -275,6 +275,7 @@ const Expenses = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+      </div>
     </DashboardLayout>
   );
 };
