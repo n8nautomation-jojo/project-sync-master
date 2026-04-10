@@ -241,7 +241,7 @@ const Expenses = () => {
                       <TableCell>{expense.branches?.name || "—"}</TableCell>
                       <TableCell className="font-semibold text-destructive">{Number(expense.amount).toLocaleString()} ج.س</TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" onClick={() => deleteExpense.mutate(expense.id)}>
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(expense.id)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </TableCell>
