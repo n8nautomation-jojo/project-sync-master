@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Receipt, Trash2, Tag, TrendingDown } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 
@@ -20,6 +21,7 @@ const Expenses = () => {
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const [newExpense, setNewExpense] = useState({
     amount: "",
@@ -239,7 +241,7 @@ const Expenses = () => {
                       <TableCell>{expense.branches?.name || "—"}</TableCell>
                       <TableCell className="font-semibold text-destructive">{Number(expense.amount).toLocaleString()} ج.س</TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" onClick={() => deleteExpense.mutate(expense.id)}>
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(expense.id)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </TableCell>
@@ -250,6 +252,29 @@ const Expenses = () => {
             </div>
           </CardContent>
         </Card>
+
+        <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+          <AlertDialogContent dir="rtl">
+            <AlertDialogHeader>
+              <AlertDialogTitle>تأكيد حذف المصروف</AlertDialogTitle>
+              <AlertDialogDescription>
+                هل أنت متأكد من حذف هذا المصروف؟ لا يمكن التراجع عن هذا الإجراء.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex-row-reverse gap-2">
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => {
+                  if (deleteTarget) deleteExpense.mutate(deleteTarget);
+                  setDeleteTarget(null);
+                }}
+              >
+                حذف
+              </AlertDialogAction>
+              <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </DashboardLayout>
   );
