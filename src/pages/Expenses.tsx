@@ -21,6 +21,7 @@ const Expenses = () => {
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const [newExpense, setNewExpense] = useState({
     amount: "",
