@@ -21,6 +21,7 @@ import {
   Wallet,
   UserCog,
   Banknote,
+  Printer,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -44,6 +45,7 @@ const menuItems = [
   { icon: Wallet, label: "المصروفات", path: "/expenses" },
   { icon: UserCog, label: "الموظفين", path: "/employees" },
   { icon: Banknote, label: "الرواتب", path: "/salaries" },
+  { icon: Printer, label: "أوامر التشغيل", path: "/print-orders" },
   { icon: BarChart3, label: "الإحصائيات", path: "/statistics" },
   { icon: FileText, label: "تقارير الإيرادات", path: "/reports" },
   { icon: FileText, label: "التقارير المالية", path: "/financial-reports" },
