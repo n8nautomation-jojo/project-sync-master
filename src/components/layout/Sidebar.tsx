@@ -37,7 +37,14 @@ import {
 } from "@/components/ui/sheet";
 import logo from "@/assets/logo.png";
 
-const menuItems = [
+interface MenuItem {
+  icon: typeof LayoutDashboard;
+  label: string;
+  path: string;
+  printingOnly?: boolean;
+}
+
+const menuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: "لوحة التحكم", path: "/dashboard" },
   { icon: Store, label: "الفروع", path: "/branches" },
   { icon: Receipt, label: "التحويلات", path: "/transfers" },
@@ -45,7 +52,7 @@ const menuItems = [
   { icon: Wallet, label: "المصروفات", path: "/expenses" },
   { icon: UserCog, label: "الموظفين", path: "/employees" },
   { icon: Banknote, label: "الرواتب", path: "/salaries" },
-  { icon: Printer, label: "أوامر التشغيل", path: "/print-orders" },
+  { icon: Printer, label: "أوامر التشغيل", path: "/print-orders", printingOnly: true },
   { icon: BarChart3, label: "الإحصائيات", path: "/statistics" },
   { icon: FileText, label: "تقارير الإيرادات", path: "/reports" },
   { icon: FileText, label: "التقارير المالية", path: "/financial-reports" },
@@ -196,7 +203,9 @@ function SidebarContent({ collapsed = false, onToggleCollapse, onNavigate }: Sid
 
       {/* Navigation */}
       <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
-        {menuItems.map((item) => {
+        {menuItems
+          .filter((item) => !item.printingOnly || currentOrganization?.industry_type === 'printing')
+          .map((item) => {
           const isActive = location.pathname === item.path;
           return (
             <Link

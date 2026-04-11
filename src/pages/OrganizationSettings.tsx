@@ -5,6 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Building2,
   Camera,
   Save,
@@ -15,6 +22,7 @@ import {
   Sparkles,
   CheckCircle,
   AlertTriangle,
+  Printer,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -222,6 +230,40 @@ export default function OrganizationSettings() {
                     {currentOrganization?.id || '-'}
                   </code>
                 </div>
+              </div>
+
+              {/* Industry Type */}
+              <div className="space-y-2">
+                <Label>نوع النشاط</Label>
+                <div className="flex gap-3">
+                  <Select
+                    value={currentOrganization?.industry_type || 'general'}
+                    onValueChange={(value) => {
+                      updateOrganization.mutate({ industry_type: value });
+                    }}
+                  >
+                    <SelectTrigger className="bg-muted/50">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="general">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="w-4 h-4" />
+                          <span>عام</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="printing">
+                        <div className="flex items-center gap-2">
+                          <Printer className="w-4 h-4" />
+                          <span>مطابع</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  اختيار "مطابع" سيُظهر أدوات إدارة أوامر التشغيل والمخزون
+                </p>
               </div>
             </div>
           </div>

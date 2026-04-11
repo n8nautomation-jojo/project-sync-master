@@ -366,6 +366,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          industry_type: string
           logo_url: string | null
           max_branches: number
           max_users: number
@@ -382,6 +383,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          industry_type?: string
           logo_url?: string | null
           max_branches?: number
           max_users?: number
@@ -398,6 +400,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          industry_type?: string
           logo_url?: string | null
           max_branches?: number
           max_users?: number
@@ -1017,6 +1020,7 @@ export type Database = {
         Returns: {
           created_at: string
           id: string
+          industry_type: string
           logo_url: string | null
           max_branches: number
           max_users: number
