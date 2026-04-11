@@ -231,6 +231,40 @@ export default function OrganizationSettings() {
                   </code>
                 </div>
               </div>
+
+              {/* Industry Type */}
+              <div className="space-y-2">
+                <Label>نوع النشاط</Label>
+                <div className="flex gap-3">
+                  <Select
+                    value={currentOrganization?.industry_type || 'general'}
+                    onValueChange={(value) => {
+                      updateOrganization.mutate({ industry_type: value });
+                    }}
+                  >
+                    <SelectTrigger className="bg-muted/50">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="general">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="w-4 h-4" />
+                          <span>عام</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="printing">
+                        <div className="flex items-center gap-2">
+                          <Printer className="w-4 h-4" />
+                          <span>مطابع</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  اختيار "مطابع" سيُظهر أدوات إدارة أوامر التشغيل والمخزون
+                </p>
+              </div>
             </div>
           </div>
 
