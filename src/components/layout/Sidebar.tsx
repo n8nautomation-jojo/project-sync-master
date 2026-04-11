@@ -203,7 +203,9 @@ function SidebarContent({ collapsed = false, onToggleCollapse, onNavigate }: Sid
 
       {/* Navigation */}
       <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
-        {menuItems.map((item) => {
+        {menuItems
+          .filter((item) => !item.printingOnly || currentOrganization?.industry_type === 'printing')
+          .map((item) => {
           const isActive = location.pathname === item.path;
           return (
             <Link
