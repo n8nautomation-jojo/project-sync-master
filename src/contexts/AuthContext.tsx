@@ -14,6 +14,7 @@ interface Organization {
   max_branches: number;
   max_users: number;
   created_at: string;
+  industry_type: string;
 }
 
 interface UserRole {
