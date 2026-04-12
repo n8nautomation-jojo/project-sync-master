@@ -1083,6 +1083,7 @@ export type Database = {
         Args: { _organization_id: string }
         Returns: number
       }
+      soft_delete_expense: { Args: { _expense_id: string }; Returns: boolean }
       user_has_full_access: {
         Args: { _organization_id: string; _user_id: string }
         Returns: boolean
