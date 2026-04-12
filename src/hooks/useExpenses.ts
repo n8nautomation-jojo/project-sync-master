@@ -115,14 +115,25 @@ export const useExpenses = () => {
 
   const deleteExpense = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('expenses')
-        .update({ is_deleted: true, deleted_at: new Date().toISOString(), deleted_by: user?.id })
-        .eq('id', id);
+      const { error } = await (supabase as any).rpc('soft_delete_expense', {
+        _expense_id: id,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses', orgId] });
       toast({ title: "تم الحذف", description: "تم حذف المصروف" });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "خطأ",
+        description: error.message?.includes('NOT_AUTHORIZED')
+          ? "ليس لديك صلاحية حذف هذا المصروف"
+          : error.message?.includes('EXPENSE_NOT_FOUND')
+            ? "المصروف غير موجود أو تم حذفه بالفعل"
+            : "فشل في حذف المصروف",
+        variant: "destructive"
+      });
     },
   });
 
