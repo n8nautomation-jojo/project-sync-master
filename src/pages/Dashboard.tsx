@@ -34,7 +34,7 @@ const timePeriodLabels: Record<TimePeriod, string> = {
 };
 
 export default function Dashboard() {
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>("month");
+  const timePeriod: TimePeriod = "month";
   const [selectedBranch, setSelectedBranch] = useState("all");
   
   const { data: stats, isLoading } = useDashboardStats({ timePeriod, branchId: selectedBranch });
@@ -78,10 +78,10 @@ export default function Dashboard() {
       {/* Filters */}
       <DashboardFilters
         timePeriod={timePeriod}
-        onTimePeriodChange={setTimePeriod}
         selectedBranch={selectedBranch}
         onBranchChange={setSelectedBranch}
         branches={branches?.map(b => ({ id: b.id, name: b.name })) || []}
+        hideTimePeriod
       />
 
       {/* Stats Grid */}
