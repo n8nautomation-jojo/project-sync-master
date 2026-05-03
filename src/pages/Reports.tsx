@@ -123,6 +123,8 @@ export default function Reports() {
     today: "اليوم",
     week: "هذا الأسبوع",
     month: "هذا الشهر",
+    last_month: "الشهر الماضي",
+    custom: "شهر محدد",
   };
 
   return (
@@ -145,8 +147,18 @@ export default function Reports() {
               <SelectItem value="today">اليوم</SelectItem>
               <SelectItem value="week">هذا الأسبوع</SelectItem>
               <SelectItem value="month">هذا الشهر</SelectItem>
+              <SelectItem value="last_month">الشهر الماضي</SelectItem>
+              <SelectItem value="custom">شهر محدد</SelectItem>
             </SelectContent>
           </Select>
+          {period === "custom" && (
+            <Input
+              type="month"
+              value={customMonth}
+              onChange={(e) => setCustomMonth(e.target.value)}
+              className="w-[160px]"
+            />
+          )}
           <Button
             variant="outline"
             className="gap-2"
