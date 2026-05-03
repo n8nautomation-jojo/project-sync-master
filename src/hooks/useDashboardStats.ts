@@ -1,14 +1,14 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
-import { startOfDay, startOfWeek, startOfMonth } from "date-fns";
+import { startOfDay, startOfWeek, startOfMonth, endOfMonth, subMonths, parse } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBranchAccess } from "@/hooks/useBranchAccess";
 
 // Auto-refresh interval (10 seconds)
 const REFETCH_INTERVAL = 10000;
 
-export type TimePeriod = "today" | "week" | "month" | "all";
+export type TimePeriod = "today" | "week" | "month" | "last_month" | "custom" | "all";
 
 export interface DashboardStats {
   totalRevenue: number;
@@ -24,24 +24,35 @@ export interface DashboardStats {
 export interface DashboardFilters {
   timePeriod: TimePeriod;
   branchId: string;
+  customMonth?: string; // YYYY-MM
 }
 
-function getDateRangeStart(period: TimePeriod): Date | null {
+function getDateRange(period: TimePeriod, customMonth?: string): { start: Date | null; end: Date | null } {
   const now = new Date();
   switch (period) {
     case "today":
-      return startOfDay(now);
+      return { start: startOfDay(now), end: null };
     case "week":
-      return startOfWeek(now, { weekStartsOn: 0 });
+      return { start: startOfWeek(now, { weekStartsOn: 0 }), end: null };
     case "month":
-      return startOfMonth(now);
+      return { start: startOfMonth(now), end: null };
+    case "last_month": {
+      const lm = subMonths(now, 1);
+      return { start: startOfMonth(lm), end: endOfMonth(lm) };
+    }
+    case "custom": {
+      if (!customMonth) return { start: startOfMonth(now), end: null };
+      const d = parse(customMonth, "yyyy-MM", new Date());
+      return { start: startOfMonth(d), end: endOfMonth(d) };
+    }
     case "all":
-      return null;
+    default:
+      return { start: null, end: null };
   }
 }
 
 export function useDashboardStats(filters?: DashboardFilters) {
-  const { timePeriod = "all", branchId = "all" } = filters || {};
+  const { timePeriod = "all", branchId = "all", customMonth } = filters || {};
   const queryClient = useQueryClient();
   const { currentOrganization } = useAuth();
   const { restrictedBranchId } = useBranchAccess();
@@ -81,7 +92,7 @@ export function useDashboardStats(filters?: DashboardFilters) {
   }, [queryClient, currentOrganization?.id]);
 
   return useQuery({
-    queryKey: ["dashboard-stats", timePeriod, effectiveBranchId, currentOrganization?.id],
+    queryKey: ["dashboard-stats", timePeriod, customMonth, effectiveBranchId, currentOrganization?.id],
     queryFn: async (): Promise<DashboardStats> => {
       if (!currentOrganization?.id) {
         return {
@@ -96,7 +107,7 @@ export function useDashboardStats(filters?: DashboardFilters) {
         };
       }
       
-      const periodStart = getDateRangeStart(timePeriod);
+      const { start: periodStart, end: periodEnd } = getDateRange(timePeriod, customMonth);
       
       // Get branches count for this organization
       const { data: branches, error: branchesError } = await supabase
@@ -121,8 +132,13 @@ export function useDashboardStats(filters?: DashboardFilters) {
       if (allTransfersError) throw allTransfersError;
       
       // Filter by time period
-      const periodTransfers = periodStart 
-        ? allTransfers?.filter(t => new Date(t.created_at) >= periodStart) || []
+      const periodTransfers = periodStart
+        ? (allTransfers?.filter(t => {
+            const d = new Date(t.created_at);
+            if (d < periodStart) return false;
+            if (periodEnd && d > periodEnd) return false;
+            return true;
+          }) || [])
         : allTransfers || [];
       
       const activeBranches = branches?.filter(b => b.is_active).length || 0;

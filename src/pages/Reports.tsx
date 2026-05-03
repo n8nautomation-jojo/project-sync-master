@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
+import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, parse } from "date-fns";
 import { ar } from "date-fns/locale";
 import {
   Select,
@@ -25,12 +25,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import logo from "@/assets/logo.png";
 
-type ReportPeriod = "today" | "week" | "month";
+type ReportPeriod = "today" | "week" | "month" | "last_month" | "custom";
 
 export default function Reports() {
-  const [period, setPeriod] = useState<ReportPeriod>("today");
+  const [period, setPeriod] = useState<ReportPeriod>("month");
+  const [customMonth, setCustomMonth] = useState<string>(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  });
   const { currentOrganization } = useAuth();
 
   const getDateRange = (p: ReportPeriod) => {
@@ -42,11 +47,19 @@ export default function Reports() {
         return { start: startOfWeek(now, { weekStartsOn: 6 }), end: endOfWeek(now, { weekStartsOn: 6 }) };
       case "month":
         return { start: startOfMonth(now), end: endOfMonth(now) };
+      case "last_month": {
+        const lm = subMonths(now, 1);
+        return { start: startOfMonth(lm), end: endOfMonth(lm) };
+      }
+      case "custom": {
+        const d = customMonth ? parse(customMonth, "yyyy-MM", new Date()) : now;
+        return { start: startOfMonth(d), end: endOfMonth(d) };
+      }
     }
   };
 
   const { data: reportData, isLoading } = useQuery({
-    queryKey: ["report", currentOrganization?.id, period],
+    queryKey: ["report", currentOrganization?.id, period, customMonth],
     queryFn: async () => {
       if (!currentOrganization?.id) return null;
 
@@ -110,6 +123,8 @@ export default function Reports() {
     today: "اليوم",
     week: "هذا الأسبوع",
     month: "هذا الشهر",
+    last_month: "الشهر الماضي",
+    custom: "شهر محدد",
   };
 
   return (
@@ -132,8 +147,18 @@ export default function Reports() {
               <SelectItem value="today">اليوم</SelectItem>
               <SelectItem value="week">هذا الأسبوع</SelectItem>
               <SelectItem value="month">هذا الشهر</SelectItem>
+              <SelectItem value="last_month">الشهر الماضي</SelectItem>
+              <SelectItem value="custom">شهر محدد</SelectItem>
             </SelectContent>
           </Select>
+          {period === "custom" && (
+            <Input
+              type="month"
+              value={customMonth}
+              onChange={(e) => setCustomMonth(e.target.value)}
+              className="w-[160px]"
+            />
+          )}
           <Button
             variant="outline"
             className="gap-2"

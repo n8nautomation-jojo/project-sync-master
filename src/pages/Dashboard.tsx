@@ -6,7 +6,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { RecentTransfers } from "@/components/dashboard/RecentTransfers";
 import { BranchPerformance } from "@/components/dashboard/BranchPerformance";
 import { QuickActions } from "@/components/dashboard/QuickActions";
-import { DashboardFilters, TimePeriod } from "@/components/dashboard/DashboardFilters";
+import { DashboardFilters, TimePeriod, timePeriodLabels } from "@/components/dashboard/DashboardFilters";
 import { ConnectionAlert } from "@/components/dashboard/ConnectionAlert";
 import { ReviewAlert } from "@/components/dashboard/ReviewAlert";
 import {
@@ -26,18 +26,15 @@ import { useBranches } from "@/hooks/useBranches";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 
-const timePeriodLabels: Record<TimePeriod, string> = {
-  today: "اليوم",
-  week: "هذا الأسبوع",
-  month: "هذا الشهر",
-  all: "الإجمالي",
-};
-
 export default function Dashboard() {
-  const timePeriod: TimePeriod = "month";
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>("month");
+  const [customMonth, setCustomMonth] = useState<string>(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  });
   const [selectedBranch, setSelectedBranch] = useState("all");
-  
-  const { data: stats, isLoading } = useDashboardStats({ timePeriod, branchId: selectedBranch });
+
+  const { data: stats, isLoading } = useDashboardStats({ timePeriod, branchId: selectedBranch, customMonth });
   const { data: financials } = useCurrentMonthFinancials();
   const { branches } = useBranches();
 
@@ -78,10 +75,12 @@ export default function Dashboard() {
       {/* Filters */}
       <DashboardFilters
         timePeriod={timePeriod}
+        onTimePeriodChange={setTimePeriod}
         selectedBranch={selectedBranch}
         onBranchChange={setSelectedBranch}
         branches={branches?.map(b => ({ id: b.id, name: b.name })) || []}
-        hideTimePeriod
+        customMonth={customMonth}
+        onCustomMonthChange={setCustomMonth}
       />
 
       {/* Stats Grid */}
