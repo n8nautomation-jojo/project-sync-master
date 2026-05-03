@@ -34,7 +34,7 @@ const timePeriodLabels: Record<TimePeriod, string> = {
 };
 
 export default function Dashboard() {
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>("all");
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>("month");
   const [selectedBranch, setSelectedBranch] = useState("all");
   
   const { data: stats, isLoading } = useDashboardStats({ timePeriod, branchId: selectedBranch });
