@@ -92,7 +92,7 @@ export function useDashboardStats(filters?: DashboardFilters) {
   }, [queryClient, currentOrganization?.id]);
 
   return useQuery({
-    queryKey: ["dashboard-stats", timePeriod, effectiveBranchId, currentOrganization?.id],
+    queryKey: ["dashboard-stats", timePeriod, customMonth, effectiveBranchId, currentOrganization?.id],
     queryFn: async (): Promise<DashboardStats> => {
       if (!currentOrganization?.id) {
         return {
@@ -107,7 +107,7 @@ export function useDashboardStats(filters?: DashboardFilters) {
         };
       }
       
-      const periodStart = getDateRangeStart(timePeriod);
+      const { start: periodStart, end: periodEnd } = getDateRange(timePeriod, customMonth);
       
       // Get branches count for this organization
       const { data: branches, error: branchesError } = await supabase
@@ -132,8 +132,13 @@ export function useDashboardStats(filters?: DashboardFilters) {
       if (allTransfersError) throw allTransfersError;
       
       // Filter by time period
-      const periodTransfers = periodStart 
-        ? allTransfers?.filter(t => new Date(t.created_at) >= periodStart) || []
+      const periodTransfers = periodStart
+        ? (allTransfers?.filter(t => {
+            const d = new Date(t.created_at);
+            if (d < periodStart) return false;
+            if (periodEnd && d > periodEnd) return false;
+            return true;
+          }) || [])
         : allTransfers || [];
       
       const activeBranches = branches?.filter(b => b.is_active).length || 0;
