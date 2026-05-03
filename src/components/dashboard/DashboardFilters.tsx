@@ -16,10 +16,11 @@ interface Branch {
 
 interface DashboardFiltersProps {
   timePeriod: TimePeriod;
-  onTimePeriodChange: (period: TimePeriod) => void;
+  onTimePeriodChange?: (period: TimePeriod) => void;
   selectedBranch: string;
   onBranchChange: (branchId: string) => void;
   branches: Branch[];
+  hideTimePeriod?: boolean;
 }
 
 const timePeriodLabels: Record<TimePeriod, string> = {
@@ -35,25 +36,28 @@ export function DashboardFilters({
   selectedBranch,
   onBranchChange,
   branches,
+  hideTimePeriod = false,
 }: DashboardFiltersProps) {
   return (
     <div className="flex flex-wrap gap-3 mb-6">
       {/* Time Period Filter */}
-      <div className="flex items-center gap-2">
-        <Calendar className="w-4 h-4 text-muted-foreground" />
-        <Select value={timePeriod} onValueChange={(v) => onTimePeriodChange(v as TimePeriod)}>
-          <SelectTrigger className="w-[140px] bg-card border-border">
-            <SelectValue placeholder="اختر الفترة" />
-          </SelectTrigger>
-          <SelectContent className="bg-popover border-border z-50">
-            {Object.entries(timePeriodLabels).map(([value, label]) => (
-              <SelectItem key={value} value={value}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {!hideTimePeriod && onTimePeriodChange && (
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-muted-foreground" />
+          <Select value={timePeriod} onValueChange={(v) => onTimePeriodChange(v as TimePeriod)}>
+            <SelectTrigger className="w-[140px] bg-card border-border">
+              <SelectValue placeholder="اختر الفترة" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover border-border z-50">
+              {Object.entries(timePeriodLabels).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       {/* Branch Filter */}
       <div className="flex items-center gap-2">
