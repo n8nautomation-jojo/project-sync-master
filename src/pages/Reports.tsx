@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
+import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, parse } from "date-fns";
 import { ar } from "date-fns/locale";
 import {
   Select,
@@ -24,7 +24,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import logo from "@/assets/logo.png";
 
 type ReportPeriod = "today" | "week" | "month";
