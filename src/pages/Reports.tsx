@@ -24,13 +24,18 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import logo from "@/assets/logo.png";
 
-type ReportPeriod = "today" | "week" | "month";
+type ReportPeriod = "today" | "week" | "month" | "last_month" | "custom";
 
 export default function Reports() {
-  const [period, setPeriod] = useState<ReportPeriod>("today");
+  const [period, setPeriod] = useState<ReportPeriod>("month");
+  const [customMonth, setCustomMonth] = useState<string>(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  });
   const { currentOrganization } = useAuth();
 
   const getDateRange = (p: ReportPeriod) => {
@@ -42,11 +47,19 @@ export default function Reports() {
         return { start: startOfWeek(now, { weekStartsOn: 6 }), end: endOfWeek(now, { weekStartsOn: 6 }) };
       case "month":
         return { start: startOfMonth(now), end: endOfMonth(now) };
+      case "last_month": {
+        const lm = subMonths(now, 1);
+        return { start: startOfMonth(lm), end: endOfMonth(lm) };
+      }
+      case "custom": {
+        const d = customMonth ? parse(customMonth, "yyyy-MM", new Date()) : now;
+        return { start: startOfMonth(d), end: endOfMonth(d) };
+      }
     }
   };
 
   const { data: reportData, isLoading } = useQuery({
-    queryKey: ["report", currentOrganization?.id, period],
+    queryKey: ["report", currentOrganization?.id, period, customMonth],
     queryFn: async () => {
       if (!currentOrganization?.id) return null;
 
