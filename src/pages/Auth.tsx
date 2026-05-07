@@ -97,6 +97,7 @@ export default function Auth() {
       if (isLogin) {
         const { error } = await signIn(formData.email, formData.password);
         if (error) {
+          logAuthNav("signin_error", { meta: { message: error.message } });
           if (error.message.includes('Invalid login credentials')) {
             toast({
               title: "خطأ في تسجيل الدخول",
@@ -111,6 +112,7 @@ export default function Auth() {
             });
           }
         } else {
+          logAuthNav("signin_success", { meta: { email: formData.email } });
           toast({
             title: "تم تسجيل الدخول بنجاح",
             description: "مرحباً بك",
@@ -119,6 +121,7 @@ export default function Auth() {
       } else {
         const { error } = await signUp(formData.email, formData.password, formData.fullName);
         if (error) {
+          logAuthNav("signup_error", { meta: { message: error.message } });
           if (error.message.includes('already registered')) {
             toast({
               title: "خطأ في التسجيل",
@@ -133,6 +136,8 @@ export default function Auth() {
             });
           }
         } else {
+          logAuthNav("signup_success", { meta: { email: formData.email } });
+          logAuthNav("redirect_to_onboarding", { from: "/auth", to: "/onboarding", meta: { reason: "new_signup" } });
           toast({
             title: "تم إنشاء الحساب بنجاح",
             description: "سيتم تحويلك لإعداد مؤسستك",
