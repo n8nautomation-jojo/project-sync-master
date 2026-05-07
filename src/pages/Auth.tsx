@@ -52,9 +52,16 @@ export default function Auth() {
   useEffect(() => {
     if (user && !authLoading) {
       const from = (location.state as any)?.from?.pathname;
-      navigate(from || '/dashboard', { replace: true });
+      const to = from || '/dashboard';
+      logAuthNav("auth_already_logged_in", {
+        from: location.pathname + location.search,
+        to,
+        userId: user.id,
+        meta: { userRolesCount: userRoles?.length ?? 0 },
+      });
+      navigate(to, { replace: true });
     }
-  }, [user, authLoading, navigate, location]);
+  }, [user, authLoading, navigate, location, userRoles]);
 
   const validateForm = () => {
     try {
