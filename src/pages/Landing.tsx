@@ -141,7 +141,7 @@ const Landing = () => {
             <Link to="/auth">
               <Button variant="ghost">تسجيل الدخول</Button>
             </Link>
-            <Link to="/auth">
+            <Link to="/auth?mode=signup">
               <Button className="gradient-primary text-primary-foreground">ابدأ الآن</Button>
             </Link>
           </div>
@@ -169,7 +169,7 @@ const Landing = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up">
-            <Link to="/auth">
+            <Link to="/auth?mode=signup">
               <Button size="lg" className="gradient-primary text-primary-foreground text-lg px-8 py-6 shadow-glow">
                 ابدأ مجاناً
                 <ArrowLeft className="mr-2 h-5 w-5" />
@@ -342,7 +342,7 @@ const Landing = () => {
                     ))}
                   </ul>
 
-                  <Link to="/auth" className="block">
+                  <Link to="/auth?mode=signup" className="block">
                     <Button 
                       className={`w-full ${plan.popular ? 'gradient-primary text-primary-foreground' : ''}`}
                       variant={plan.popular ? 'default' : 'outline'}
@@ -368,7 +368,7 @@ const Landing = () => {
               <p className="text-primary-foreground/90 text-lg max-w-2xl mx-auto mb-8">
                 انضم إلى أكثر من 1000 متجر يستخدمون حساباتي لتتبع وإدارة إيراداتهم اليومية
               </p>
-              <Link to="/auth">
+              <Link to="/auth?mode=signup">
                 <Button size="lg" variant="secondary" className="text-lg px-8 py-6 bg-background text-foreground hover:bg-background/90">
                   ابدأ تجربتك المجانية
                   <ArrowLeft className="mr-2 h-5 w-5" />

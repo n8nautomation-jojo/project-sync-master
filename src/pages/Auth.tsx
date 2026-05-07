@@ -28,7 +28,8 @@ export default function Auth() {
   const { signIn, signUp, user, isLoading: authLoading, userRoles } = useAuth();
   const { toast } = useToast();
   
-  const [isLogin, setIsLogin] = useState(true);
+  const initialMode = new URLSearchParams(location.search).get('mode');
+  const [isLogin, setIsLogin] = useState(initialMode !== 'signup');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
