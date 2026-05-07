@@ -141,7 +141,7 @@ const Landing = () => {
             <Link to="/auth">
               <Button variant="ghost">تسجيل الدخول</Button>
             </Link>
-            <Link to="/auth">
+            <Link to="/auth?mode=signup">
               <Button className="gradient-primary text-primary-foreground">ابدأ الآن</Button>
             </Link>
           </div>
