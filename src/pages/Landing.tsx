@@ -368,7 +368,7 @@ const Landing = () => {
               <p className="text-primary-foreground/90 text-lg max-w-2xl mx-auto mb-8">
                 انضم إلى أكثر من 1000 متجر يستخدمون حساباتي لتتبع وإدارة إيراداتهم اليومية
               </p>
-              <Link to="/auth">
+              <Link to="/auth?mode=signup">
                 <Button size="lg" variant="secondary" className="text-lg px-8 py-6 bg-background text-foreground hover:bg-background/90">
                   ابدأ تجربتك المجانية
                   <ArrowLeft className="mr-2 h-5 w-5" />
