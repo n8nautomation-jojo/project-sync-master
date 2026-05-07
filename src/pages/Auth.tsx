@@ -8,6 +8,7 @@ import { Eye, EyeOff, Lock, Mail, User, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import logo from "@/assets/logo.png";
+import { logAuthNav } from "@/lib/authNavLogger";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "البريد الإلكتروني غير صالح" }),
