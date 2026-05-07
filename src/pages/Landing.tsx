@@ -342,7 +342,7 @@ const Landing = () => {
                     ))}
                   </ul>
 
-                  <Link to="/auth" className="block">
+                  <Link to="/auth?mode=signup" className="block">
                     <Button 
                       className={`w-full ${plan.popular ? 'gradient-primary text-primary-foreground' : ''}`}
                       variant={plan.popular ? 'default' : 'outline'}
