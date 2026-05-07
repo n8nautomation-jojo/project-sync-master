@@ -42,17 +42,18 @@ export default function Auth() {
     fullName: "",
   });
 
-  // Redirect if already logged in
+  // Redirect if already logged in.
+  // IMPORTANT: do NOT auto-redirect to /onboarding from here — that path is
+  // strictly for new signups (handled explicitly in handleSubmit below).
+  // Existing users who land on /auth while authenticated should always go
+  // to their previous page or the dashboard. ProtectedRoute will handle
+  // any further redirection if they happen to have no organization yet.
   useEffect(() => {
     if (user && !authLoading) {
       const from = (location.state as any)?.from?.pathname;
-      if (userRoles.length === 0) {
-        navigate('/onboarding');
-      } else {
-        navigate(from || '/dashboard');
-      }
+      navigate(from || '/dashboard', { replace: true });
     }
-  }, [user, authLoading, navigate, location, userRoles]);
+  }, [user, authLoading, navigate, location]);
 
   const validateForm = () => {
     try {
