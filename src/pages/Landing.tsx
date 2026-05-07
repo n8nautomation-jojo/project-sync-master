@@ -169,7 +169,7 @@ const Landing = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up">
-            <Link to="/auth">
+            <Link to="/auth?mode=signup">
               <Button size="lg" className="gradient-primary text-primary-foreground text-lg px-8 py-6 shadow-glow">
                 ابدأ مجاناً
                 <ArrowLeft className="mr-2 h-5 w-5" />
