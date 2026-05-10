@@ -39,6 +39,7 @@ interface AuthContextType {
   currentOrganization: Organization | null;
   currentRole: UserRole | null;
   isLoading: boolean;
+  userDataReady: boolean;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -56,9 +57,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [currentOrganization, setCurrentOrganization] = useState<Organization | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [userDataReady, setUserDataReady] = useState(false);
 
   const fetchUserData = async (userId: string) => {
     try {
+      setUserDataReady(false);
+
       // Fetch profile
       const { data: profileData } = await supabase
         .from('profiles')
@@ -77,11 +81,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           organization_id,
           role,
           branch_id,
-          organization:organizations(*)
+          organization:organizations(
+            id,
+            name,
+            slug,
+            logo_url,
+            plan_type,
+            subscription_status,
+            max_branches,
+            max_users,
+            created_at,
+            industry_type
+          )
         `)
         .eq('user_id', userId);
 
-      if (rolesData && rolesData.length > 0) {
+      if (!rolesData) {
+        setUserRoles([]);
+        setCurrentOrganization(null);
+        return;
+      }
+
+      if (rolesData.length > 0) {
         const roles = rolesData.map((r: any) => ({
           organization_id: r.organization_id,
           role: r.role,
@@ -106,6 +127,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
+    } finally {
+      setUserDataReady(true);
     }
   };
 
@@ -129,6 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfile(null);
         setUserRoles([]);
         setCurrentOrganization(null);
+        setUserDataReady(true);
         setIsLoading(false);
         return;
       }
@@ -238,6 +262,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           ? userRoles.find(r => r.organization_id === currentOrganization.id) || null 
           : null,
         isLoading,
+        userDataReady,
         signUp,
         signIn,
         signOut,
