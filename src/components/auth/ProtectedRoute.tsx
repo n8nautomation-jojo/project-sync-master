@@ -10,10 +10,10 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, requireOrganization = true }: ProtectedRouteProps) {
-  const { user, isLoading, currentOrganization, userRoles } = useAuth();
+  const { user, isLoading, currentOrganization, userRoles, userDataReady } = useAuth();
   const location = useLocation();
 
-  if (isLoading) {
+  if (isLoading || (user && !userDataReady)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
@@ -39,7 +39,7 @@ export function ProtectedRoute({ children, requireOrganization = true }: Protect
       from: location.pathname,
       to: '/onboarding',
       userId: user.id,
-      meta: { reason: 'no_user_roles', source: 'ProtectedRoute' },
+      meta: { reason: 'no_user_roles', source: 'ProtectedRoute', userDataReady },
     });
     return <Navigate to="/onboarding" replace />;
   }
