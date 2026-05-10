@@ -53,6 +53,14 @@ export default function Auth() {
     if (user && !authLoading && userDataReady) {
       const from = (location.state as any)?.from?.pathname;
       const to = from || '/dashboard';
+      if (to === '/dashboard') {
+        logAuthNav('redirect_to_dashboard', {
+          from: location.pathname + location.search,
+          to,
+          userId: user.id,
+          meta: { source: 'Auth', userRolesCount: userRoles?.length ?? 0, userDataReady },
+        });
+      }
       logAuthNav("auth_already_logged_in", {
         from: location.pathname + location.search,
         to,
