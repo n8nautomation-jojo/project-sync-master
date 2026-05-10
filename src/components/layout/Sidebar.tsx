@@ -22,6 +22,7 @@ import {
   UserCog,
   Banknote,
   Printer,
+  TrendingUp,
 } from "lucide-react";
 import {
   DropdownMenu,
