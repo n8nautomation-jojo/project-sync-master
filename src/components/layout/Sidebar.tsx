@@ -54,6 +54,7 @@ const menuItems: MenuItem[] = [
   { icon: UserCog, label: "الموظفين", path: "/employees" },
   { icon: Banknote, label: "الرواتب", path: "/salaries" },
   { icon: Printer, label: "أوامر التشغيل", path: "/print-orders", printingOnly: true },
+  { icon: TrendingUp, label: "الاستثمار والائتمان", path: "/investments" },
   { icon: BarChart3, label: "الإحصائيات", path: "/statistics" },
   { icon: FileText, label: "تقارير الإيرادات", path: "/reports" },
   { icon: FileText, label: "التقارير المالية", path: "/financial-reports" },
