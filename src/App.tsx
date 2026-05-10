@@ -108,6 +108,9 @@ const App = () => (
               <Route path="/print-orders" element={
                 <ProtectedRoute><PrintOrders /></ProtectedRoute>
               } />
+              <Route path="/investments" element={
+                <ProtectedRoute><InvestmentOrchestrator /></ProtectedRoute>
+              } />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
