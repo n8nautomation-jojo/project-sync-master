@@ -26,7 +26,7 @@ const signupSchema = loginSchema.extend({
 export default function Auth() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, signUp, user, isLoading: authLoading, userRoles } = useAuth();
+  const { signIn, signUp, user, isLoading: authLoading, userRoles, userDataReady } = useAuth();
   const { toast } = useToast();
   
   const initialMode = new URLSearchParams(location.search).get('mode');
@@ -50,18 +50,18 @@ export default function Auth() {
   // to their previous page or the dashboard. ProtectedRoute will handle
   // any further redirection if they happen to have no organization yet.
   useEffect(() => {
-    if (user && !authLoading) {
+    if (user && !authLoading && userDataReady) {
       const from = (location.state as any)?.from?.pathname;
       const to = from || '/dashboard';
       logAuthNav("auth_already_logged_in", {
         from: location.pathname + location.search,
         to,
         userId: user.id,
-        meta: { userRolesCount: userRoles?.length ?? 0 },
+        meta: { userRolesCount: userRoles?.length ?? 0, userDataReady },
       });
       navigate(to, { replace: true });
     }
-  }, [user, authLoading, navigate, location, userRoles]);
+  }, [user, authLoading, userDataReady, navigate, location, userRoles]);
 
   const validateForm = () => {
     try {
