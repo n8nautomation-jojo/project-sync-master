@@ -326,6 +326,87 @@ export type Database = {
           },
         ]
       }
+      financial_milestones: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          is_completed: boolean
+          organization_id: string
+          sort_order: number
+          target_amount: number | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          organization_id: string
+          sort_order?: number
+          target_amount?: number | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          organization_id?: string
+          sort_order?: number
+          target_amount?: number | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      investment_logs: {
+        Row: {
+          asset_name: string
+          capital_amount: number
+          created_at: string
+          expected_monthly_roi: number
+          id: string
+          is_active: boolean
+          notes: string | null
+          organization_id: string
+          start_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          asset_name: string
+          capital_amount?: number
+          created_at?: string
+          expected_monthly_roi?: number
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          organization_id: string
+          start_date?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          asset_name?: string
+          capital_amount?: number
+          created_at?: string
+          expected_monthly_roi?: number
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          organization_id?: string
+          start_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -743,6 +824,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_credit_profiles: {
+        Row: {
+          created_at: string
+          credit_limit: number
+          currency: string
+          current_balance: number
+          id: string
+          monthly_income_goal: number
+          monthly_payment: number
+          monthly_spend: number
+          organization_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credit_limit?: number
+          currency?: string
+          current_balance?: number
+          id?: string
+          monthly_income_goal?: number
+          monthly_payment?: number
+          monthly_spend?: number
+          organization_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credit_limit?: number
+          currency?: string
+          current_balance?: number
+          id?: string
+          monthly_income_goal?: number
+          monthly_payment?: number
+          monthly_spend?: number
+          organization_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_preferences: {
         Row: {
