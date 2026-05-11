@@ -30,6 +30,7 @@ import Salaries from "./pages/Salaries";
 import FinancialReports from "./pages/FinancialReports";
 import PrintOrders from "./pages/PrintOrders";
 import InvestmentOrchestrator from "./pages/InvestmentOrchestrator";
+import Invoices from "./pages/Invoices";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -110,6 +111,9 @@ const App = () => (
               } />
               <Route path="/investments" element={
                 <ProtectedRoute><InvestmentOrchestrator /></ProtectedRoute>
+              } />
+              <Route path="/invoices" element={
+                <ProtectedRoute><Invoices /></ProtectedRoute>
               } />
               <Route path="*" element={<NotFound />} />
             </Routes>
