@@ -23,6 +23,7 @@ import {
   Banknote,
   Printer,
   TrendingUp,
+  FileSpreadsheet,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -44,6 +45,7 @@ interface MenuItem {
   path: string;
   printingOnly?: boolean;
   investmentOnly?: boolean;
+  invoicingOnly?: boolean;
 }
 
 const menuItems: MenuItem[] = [
@@ -56,6 +58,7 @@ const menuItems: MenuItem[] = [
   { icon: Banknote, label: "الرواتب", path: "/salaries" },
   { icon: Printer, label: "أوامر التشغيل", path: "/print-orders", printingOnly: true },
   { icon: TrendingUp, label: "الاستثمار والائتمان", path: "/investments", investmentOnly: true },
+  { icon: FileSpreadsheet, label: "الفواتير", path: "/invoices", invoicingOnly: true },
   { icon: BarChart3, label: "الإحصائيات", path: "/statistics" },
   { icon: FileText, label: "تقارير الإيرادات", path: "/reports" },
   { icon: FileText, label: "التقارير المالية", path: "/financial-reports" },
@@ -209,6 +212,7 @@ function SidebarContent({ collapsed = false, onToggleCollapse, onNavigate }: Sid
         {menuItems
           .filter((item) => !item.printingOnly || currentOrganization?.industry_type === 'printing')
           .filter((item) => !item.investmentOnly || currentOrganization?.investment_enabled === true)
+          .filter((item) => !item.invoicingOnly || currentOrganization?.invoicing_enabled === true)
           .map((item) => {
           const isActive = location.pathname === item.path;
           return (

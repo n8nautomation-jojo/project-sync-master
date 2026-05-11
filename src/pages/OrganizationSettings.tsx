@@ -25,6 +25,7 @@ import {
   AlertTriangle,
   Printer,
   TrendingUp,
+  FileSpreadsheet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -285,6 +286,26 @@ export default function OrganizationSettings() {
                 </div>
                 <p className="text-xs text-muted-foreground">
                   عند التفعيل سيظهر تبويب "الاستثمار والائتمان" في القائمة الجانبية
+                </p>
+              </div>
+
+              {/* Invoicing Module Toggle */}
+              <div className="space-y-2">
+                <Label>مديول الفواتير</Label>
+                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <FileSpreadsheet className="w-4 h-4 text-primary" />
+                    <span className="text-sm">تفعيل إصدار فواتير الخدمات (USD)</span>
+                  </div>
+                  <Switch
+                    checked={!!currentOrganization?.invoicing_enabled}
+                    onCheckedChange={(checked) => {
+                      updateOrganization.mutate({ invoicing_enabled: checked });
+                    }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  عند التفعيل سيظهر تبويب "الفواتير" لإصدار فواتير احترافية وتصديرها PDF
                 </p>
               </div>
             </div>
