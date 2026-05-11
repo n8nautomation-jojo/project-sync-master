@@ -407,6 +407,122 @@ export type Database = {
         }
         Relationships: []
       }
+      invoice_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          invoice_id: string
+          quantity: number
+          sort_order: number
+          total: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          invoice_id: string
+          quantity?: number
+          sort_order?: number
+          total?: number
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_id?: string
+          quantity?: number
+          sort_order?: number
+          total?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          currency: string
+          due_date: string | null
+          from_address: string | null
+          from_company: string
+          from_email: string | null
+          id: string
+          invoice_date: string
+          invoice_number: string
+          notes: string | null
+          organization_id: string
+          project_name: string | null
+          status: string
+          subtotal: number
+          tax_amount: number
+          tax_rate: number
+          to_address: string | null
+          to_client: string
+          to_email: string | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          due_date?: string | null
+          from_address?: string | null
+          from_company: string
+          from_email?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number: string
+          notes?: string | null
+          organization_id: string
+          project_name?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          to_address?: string | null
+          to_client: string
+          to_email?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          due_date?: string | null
+          from_address?: string | null
+          from_company?: string
+          from_email?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          notes?: string | null
+          organization_id?: string
+          project_name?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          to_address?: string | null
+          to_client?: string
+          to_email?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -449,6 +565,7 @@ export type Database = {
           id: string
           industry_type: string
           investment_enabled: boolean
+          invoicing_enabled: boolean
           logo_url: string | null
           max_branches: number
           max_users: number
@@ -467,6 +584,7 @@ export type Database = {
           id?: string
           industry_type?: string
           investment_enabled?: boolean
+          invoicing_enabled?: boolean
           logo_url?: string | null
           max_branches?: number
           max_users?: number
@@ -485,6 +603,7 @@ export type Database = {
           id?: string
           industry_type?: string
           investment_enabled?: boolean
+          invoicing_enabled?: boolean
           logo_url?: string | null
           max_branches?: number
           max_users?: number
@@ -1148,6 +1267,7 @@ export type Database = {
           id: string
           industry_type: string
           investment_enabled: boolean
+          invoicing_enabled: boolean
           logo_url: string | null
           max_branches: number
           max_users: number
