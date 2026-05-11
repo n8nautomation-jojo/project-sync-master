@@ -15,6 +15,7 @@ interface Organization {
   max_users: number;
   created_at: string;
   industry_type: string;
+  investment_enabled?: boolean;
 }
 
 interface UserRole {
@@ -91,7 +92,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             max_branches,
             max_users,
             created_at,
-            industry_type
+            industry_type,
+            investment_enabled
           )
         `)
         .eq('user_id', userId);

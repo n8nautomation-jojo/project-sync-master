@@ -448,6 +448,7 @@ export type Database = {
           created_at: string
           id: string
           industry_type: string
+          investment_enabled: boolean
           logo_url: string | null
           max_branches: number
           max_users: number
@@ -465,6 +466,7 @@ export type Database = {
           created_at?: string
           id?: string
           industry_type?: string
+          investment_enabled?: boolean
           logo_url?: string | null
           max_branches?: number
           max_users?: number
@@ -482,6 +484,7 @@ export type Database = {
           created_at?: string
           id?: string
           industry_type?: string
+          investment_enabled?: boolean
           logo_url?: string | null
           max_branches?: number
           max_users?: number
@@ -1144,6 +1147,7 @@ export type Database = {
           created_at: string
           id: string
           industry_type: string
+          investment_enabled: boolean
           logo_url: string | null
           max_branches: number
           max_users: number
