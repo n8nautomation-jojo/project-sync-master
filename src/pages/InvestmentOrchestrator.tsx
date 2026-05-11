@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
+import { Navigate } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import { useAuth } from "@/contexts/AuthContext";
 import { useInvestmentOrchestrator } from "@/hooks/useInvestmentOrchestrator";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +29,11 @@ function healthStatus(util: number) {
 }
 
 export default function InvestmentOrchestrator() {
+  const { currentOrganization } = useAuth();
+  if (currentOrganization && !currentOrganization.investment_enabled) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   const {
     profile, profileLoading, investments, milestones,
     upsertProfile, addInvestment, deleteInvestment, toggleInvestment,
