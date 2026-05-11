@@ -43,6 +43,7 @@ interface MenuItem {
   label: string;
   path: string;
   printingOnly?: boolean;
+  investmentOnly?: boolean;
 }
 
 const menuItems: MenuItem[] = [
@@ -54,7 +55,7 @@ const menuItems: MenuItem[] = [
   { icon: UserCog, label: "الموظفين", path: "/employees" },
   { icon: Banknote, label: "الرواتب", path: "/salaries" },
   { icon: Printer, label: "أوامر التشغيل", path: "/print-orders", printingOnly: true },
-  { icon: TrendingUp, label: "الاستثمار والائتمان", path: "/investments" },
+  { icon: TrendingUp, label: "الاستثمار والائتمان", path: "/investments", investmentOnly: true },
   { icon: BarChart3, label: "الإحصائيات", path: "/statistics" },
   { icon: FileText, label: "تقارير الإيرادات", path: "/reports" },
   { icon: FileText, label: "التقارير المالية", path: "/financial-reports" },
@@ -207,6 +208,7 @@ function SidebarContent({ collapsed = false, onToggleCollapse, onNavigate }: Sid
       <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
         {menuItems
           .filter((item) => !item.printingOnly || currentOrganization?.industry_type === 'printing')
+          .filter((item) => !item.investmentOnly || currentOrganization?.investment_enabled === true)
           .map((item) => {
           const isActive = location.pathname === item.path;
           return (
