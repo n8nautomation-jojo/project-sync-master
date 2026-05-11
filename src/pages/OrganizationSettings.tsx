@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import {
   Building2,
   Camera,
@@ -23,6 +24,7 @@ import {
   CheckCircle,
   AlertTriangle,
   Printer,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -263,6 +265,26 @@ export default function OrganizationSettings() {
                 </div>
                 <p className="text-xs text-muted-foreground">
                   اختيار "مطابع" سيُظهر أدوات إدارة أوامر التشغيل والمخزون
+                </p>
+              </div>
+
+              {/* Investment Module Toggle */}
+              <div className="space-y-2">
+                <Label>مديول الاستثمار والائتمان</Label>
+                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-primary" />
+                    <span className="text-sm">تفعيل أدوات الاستثمار وإدارة الائتمان</span>
+                  </div>
+                  <Switch
+                    checked={!!currentOrganization?.investment_enabled}
+                    onCheckedChange={(checked) => {
+                      updateOrganization.mutate({ investment_enabled: checked });
+                    }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  عند التفعيل سيظهر تبويب "الاستثمار والائتمان" في القائمة الجانبية
                 </p>
               </div>
             </div>
