@@ -24,6 +24,7 @@ import {
   Printer,
   TrendingUp,
   FileSpreadsheet,
+  CreditCard,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -59,6 +60,7 @@ const menuItems: MenuItem[] = [
   { icon: Printer, label: "أوامر التشغيل", path: "/print-orders", printingOnly: true },
   { icon: TrendingUp, label: "الاستثمار والائتمان", path: "/investments", investmentOnly: true },
   { icon: FileSpreadsheet, label: "الفواتير", path: "/invoices", invoicingOnly: true },
+  { icon: CreditCard, label: "فواتير الاشتراك", path: "/subscription-invoices" },
   { icon: BarChart3, label: "الإحصائيات", path: "/statistics" },
   { icon: FileText, label: "تقارير الإيرادات", path: "/reports" },
   { icon: FileText, label: "التقارير المالية", path: "/financial-reports" },
