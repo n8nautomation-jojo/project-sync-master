@@ -619,6 +619,95 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_invoices: {
+        Row: {
+          amount_usd: number
+          created_at: string
+          description: string | null
+          due_date: string | null
+          from_address: string
+          from_company: string
+          from_email: string
+          id: string
+          invoice_number: string
+          issue_date: string
+          organization_id: string
+          paid_at: string | null
+          payment_method: string | null
+          payment_reference: string | null
+          period_end: string | null
+          period_start: string | null
+          plan_code: string | null
+          plan_id: string | null
+          status: string
+          tax_usd: number
+          to_email: string | null
+          to_organization_name: string
+          total_usd: number
+          updated_at: string
+        }
+        Insert: {
+          amount_usd?: number
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          from_address?: string
+          from_company?: string
+          from_email?: string
+          id?: string
+          invoice_number: string
+          issue_date?: string
+          organization_id: string
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          plan_code?: string | null
+          plan_id?: string | null
+          status?: string
+          tax_usd?: number
+          to_email?: string | null
+          to_organization_name: string
+          total_usd?: number
+          updated_at?: string
+        }
+        Update: {
+          amount_usd?: number
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          from_address?: string
+          from_company?: string
+          from_email?: string
+          id?: string
+          invoice_number?: string
+          issue_date?: string
+          organization_id?: string
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          plan_code?: string | null
+          plan_id?: string | null
+          status?: string
+          tax_usd?: number
+          to_email?: string | null
+          to_organization_name?: string
+          total_usd?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_invoices_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       print_orders: {
         Row: {
           branch_id: string | null
@@ -795,6 +884,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      subscription_plans: {
+        Row: {
+          billing_cycle: string
+          code: string
+          created_at: string
+          description_en: string | null
+          features: Json
+          id: string
+          is_active: boolean
+          max_branches: number
+          max_users: number
+          name_en: string
+          price_usd: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          billing_cycle?: string
+          code: string
+          created_at?: string
+          description_en?: string | null
+          features?: Json
+          id?: string
+          is_active?: boolean
+          max_branches?: number
+          max_users?: number
+          name_en: string
+          price_usd?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          billing_cycle?: string
+          code?: string
+          created_at?: string
+          description_en?: string | null
+          features?: Json
+          id?: string
+          is_active?: boolean
+          max_branches?: number
+          max_users?: number
+          name_en?: string
+          price_usd?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       system_logs: {
         Row: {
@@ -1292,6 +1429,7 @@ export type Database = {
         Args: { _chat_id: string; _organization_id: string }
         Returns: string
       }
+      generate_platform_invoice_number: { Args: never; Returns: string }
       get_organization_limits: {
         Args: { _organization_id: string }
         Returns: {
@@ -1324,6 +1462,14 @@ export type Database = {
       }
       is_organization_member: {
         Args: { _organization_id: string; _user_id: string }
+        Returns: boolean
+      }
+      issue_platform_invoice_for_org: {
+        Args: { _org_id: string }
+        Returns: string
+      }
+      mark_platform_invoice_paid: {
+        Args: { _invoice_id: string; _method?: string; _reference?: string }
         Returns: boolean
       }
       soft_delete_all_transfers: {
