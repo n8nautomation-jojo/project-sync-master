@@ -15,6 +15,7 @@ const statusLabel = (s: PlatformInvoice["status"]) =>
 
 export default function SubscriptionInvoices() {
   const { list, markPaid } = usePlatformInvoices();
+  const navigate = useNavigate();
   const invoices = list.data || [];
 
   return (
