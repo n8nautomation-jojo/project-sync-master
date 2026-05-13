@@ -49,6 +49,21 @@ export const usePlatformInvoices = () => {
     },
   });
 
+  const getById = (id: string | undefined) =>
+    useQuery({
+      queryKey: ["platform_invoice", id],
+      enabled: !!id,
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from("platform_invoices")
+          .select("*")
+          .eq("id", id!)
+          .single();
+        if (error) throw error;
+        return data as PlatformInvoice;
+      },
+    });
+
   const markPaid = useMutation({
     mutationFn: async ({ id, reference, method }: { id: string; reference?: string; method?: string }) => {
       const { error } = await supabase.rpc("mark_platform_invoice_paid", {
@@ -65,5 +80,5 @@ export const usePlatformInvoices = () => {
     onError: (e: Error) => toast({ title: "خطأ", description: e.message, variant: "destructive" }),
   });
 
-  return { list, markPaid };
+  return { list, getById, markPaid };
 };
