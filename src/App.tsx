@@ -32,6 +32,7 @@ import PrintOrders from "./pages/PrintOrders";
 import InvestmentOrchestrator from "./pages/InvestmentOrchestrator";
 import Invoices from "./pages/Invoices";
 import SubscriptionInvoices from "./pages/SubscriptionInvoices";
+import SubscriptionInvoiceDetail from "./pages/SubscriptionInvoiceDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
