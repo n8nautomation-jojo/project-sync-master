@@ -120,7 +120,9 @@ const App = () => (
               <Route path="/subscription-invoices" element={
                 <ProtectedRoute><SubscriptionInvoices /></ProtectedRoute>
               } />
-              <Route path="*" element={<NotFound />} />
+              <Route path="/subscription-invoices/:id" element={
+                <ProtectedRoute><SubscriptionInvoiceDetail /></ProtectedRoute>
+              } />
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
