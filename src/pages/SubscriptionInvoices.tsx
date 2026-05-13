@@ -2,7 +2,8 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download, FileSpreadsheet, CheckCircle2 } from "lucide-react";
+import { Download, FileSpreadsheet, CheckCircle2, Eye } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { usePlatformInvoices, type PlatformInvoice } from "@/hooks/usePlatformInvoices";
 import { generatePlatformInvoicePdf } from "@/utils/platformInvoicePdf";
 
