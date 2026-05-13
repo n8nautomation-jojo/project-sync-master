@@ -32,6 +32,7 @@ import PrintOrders from "./pages/PrintOrders";
 import InvestmentOrchestrator from "./pages/InvestmentOrchestrator";
 import Invoices from "./pages/Invoices";
 import SubscriptionInvoices from "./pages/SubscriptionInvoices";
+import SubscriptionInvoiceDetail from "./pages/SubscriptionInvoiceDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -119,7 +120,9 @@ const App = () => (
               <Route path="/subscription-invoices" element={
                 <ProtectedRoute><SubscriptionInvoices /></ProtectedRoute>
               } />
-              <Route path="*" element={<NotFound />} />
+              <Route path="/subscription-invoices/:id" element={
+                <ProtectedRoute><SubscriptionInvoiceDetail /></ProtectedRoute>
+              } />
             </Routes>
           </BrowserRouter>
         </TooltipProvider>

@@ -2,7 +2,8 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download, FileSpreadsheet, CheckCircle2 } from "lucide-react";
+import { Download, FileSpreadsheet, CheckCircle2, Eye } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { usePlatformInvoices, type PlatformInvoice } from "@/hooks/usePlatformInvoices";
 import { generatePlatformInvoicePdf } from "@/utils/platformInvoicePdf";
 
@@ -14,6 +15,7 @@ const statusLabel = (s: PlatformInvoice["status"]) =>
 
 export default function SubscriptionInvoices() {
   const { list, markPaid } = usePlatformInvoices();
+  const navigate = useNavigate();
   const invoices = list.data || [];
 
   return (
@@ -58,8 +60,13 @@ export default function SubscriptionInvoices() {
                   <tbody>
                     {invoices.map((inv) => (
                       <tr key={inv.id} className="border-b hover:bg-muted/40">
-                        <td className="py-3 px-2 font-mono text-xs font-semibold">
-                          {inv.invoice_number}
+                        <td className="py-3 px-2">
+                          <button
+                            onClick={() => navigate(`/subscription-invoices/${inv.id}`)}
+                            className="font-mono text-xs font-semibold text-primary hover:underline"
+                          >
+                            {inv.invoice_number}
+                          </button>
                         </td>
                         <td className="py-3 px-2">
                           {new Date(inv.issue_date).toLocaleDateString("ar-EG")}
@@ -71,6 +78,14 @@ export default function SubscriptionInvoices() {
                         </td>
                         <td className="py-3 px-2">
                           <div className="flex gap-2 justify-end">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => navigate(`/subscription-invoices/${inv.id}`)}
+                              title="عرض التفاصيل"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
                             <Button
                               size="sm"
                               variant="outline"
