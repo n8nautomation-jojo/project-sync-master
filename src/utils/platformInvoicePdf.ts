@@ -100,6 +100,57 @@ export async function generatePlatformInvoicePdf(invoice: PlatformInvoice) {
     }
   };
 
+  // Bidi-aware text drawer: segments mixed Arabic/Latin text into runs and
+  // renders each run with the proper font in correct visual order based on
+  // the paragraph's base direction. Prevents reversed words, broken numbers,
+  // and box glyphs from font/script mismatch.
+  const drawBidi = (
+    text: string,
+    x: number,
+    y: number,
+    opts: { align?: "left" | "right" | "center"; style?: "normal" | "bold" } = {}
+  ) => {
+    const value = String(text ?? "");
+    const style = opts.style ?? "normal";
+    const align = opts.align ?? "left";
+
+    // Pure Latin: fast path
+    if (!hasNonLatin(value)) {
+      doc.setFont("helvetica", style);
+      doc.text(value, x, y, { align });
+      return;
+    }
+
+    // Arabic font unavailable: fall back to single-font render with RTL hint
+    if (!arabicReady) {
+      doc.setFont("helvetica", style);
+      doc.text(value, x, y, { align, isInputRtl: true } as any);
+      return;
+    }
+
+    const dir = baseDir(value);
+    const runs = segmentRuns(value);
+    const widths = runs.map((r) => {
+      doc.setFont(r.isRtl ? "NotoArabic" : "helvetica", style);
+      return doc.getTextWidth(r.text);
+    });
+    const total = widths.reduce((a, b) => a + b, 0);
+
+    let startX = x;
+    if (align === "right") startX = x - total;
+    else if (align === "center") startX = x - total / 2;
+
+    // RTL base: lay runs in reverse visual order (logical-first run sits at the right).
+    const order = dir === "rtl" ? runs.map((_, i) => runs.length - 1 - i) : runs.map((_, i) => i);
+    let cursor = startX;
+    for (const i of order) {
+      const r = runs[i];
+      doc.setFont(r.isRtl ? "NotoArabic" : "helvetica", style);
+      doc.text(r.text, cursor, y, r.isRtl ? ({ isInputRtl: true } as any) : undefined);
+      cursor += widths[i];
+    }
+  };
+
   // Top dark header bar
   doc.setFillColor(15, 23, 42);
   doc.rect(0, 0, pageWidth, 100, "F");
