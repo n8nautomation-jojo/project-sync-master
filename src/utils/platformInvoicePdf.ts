@@ -95,13 +95,24 @@ export async function generatePlatformInvoicePdf(invoice: PlatformInvoice) {
   doc.setFontSize(12);
   y += 18;
   setSmartFont(invoice.to_organization_name, "bold");
-  doc.text(invoice.to_organization_name, margin, y);
+  const orgIsRtl = hasNonLatin(invoice.to_organization_name);
+  if (orgIsRtl) {
+    doc.text(invoice.to_organization_name, pageWidth - margin, y, {
+      align: "right",
+      isInputRtl: true,
+    } as any);
+  } else {
+    doc.text(invoice.to_organization_name, margin, y);
+  }
   if (invoice.to_email) {
     y += 14;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
-    doc.text(invoice.to_email, margin, y);
+    doc.text(invoice.to_email, orgIsRtl ? pageWidth - margin : margin, y, {
+      align: orgIsRtl ? "right" : "left",
+    });
   }
+
 
   // Right side: invoice meta block
   let metaY = 140;
