@@ -228,8 +228,11 @@ export async function generatePlatformInvoicePdf(invoice: PlatformInvoice) {
       : "";
 
   const descText = invoice.description || "Hisabaty Subscription";
-  const descIsRtl = arabicReady && hasNonLatin(descText);
-  const descFont = descIsRtl ? "NotoArabic" : "helvetica";
+  const descHasArabic = arabicReady && hasNonLatin(descText);
+  const descHasLatin = /[A-Za-z]/.test(descText);
+  const descIsMixed = descHasArabic && descHasLatin;
+  const descIsRtl = descHasArabic; // RTL base whenever Arabic is present
+  const descColIndex = descIsRtl ? 4 : 0;
 
   autoTable(doc, {
     startY: tableStart,
@@ -259,16 +262,39 @@ export async function generatePlatformInvoicePdf(invoice: PlatformInvoice) {
           1: { halign: "right", cellWidth: 80 },
           2: { halign: "center", cellWidth: 40 },
           3: { halign: "right" },
-          4: { font: descFont, halign: "right" },
+          4: { font: "NotoArabic", halign: "right" },
         }
       : {
-          0: { font: descFont },
+          0: { font: descHasArabic ? "NotoArabic" : "helvetica" },
           2: { halign: "center", cellWidth: 40 },
           3: { halign: "right", cellWidth: 80 },
           4: { halign: "right", cellWidth: 80 },
         },
     margin: { left: margin, right: margin },
+    // For mixed-script description cells autoTable cannot multi-font a single
+    // string, so blank the default text and repaint with the bidi drawer.
+    didParseCell: (data) => {
+      if (
+        descIsMixed &&
+        data.section === "body" &&
+        data.column.index === descColIndex
+      ) {
+        // hide default text by matching color to fill (transparent overpaint
+        // happens in didDrawCell)
+        (data.cell as any)._bidiText = descText;
+        data.cell.text = [""];
+      }
+    },
+    didDrawCell: (data) => {
+      const bidiText = (data.cell as any)._bidiText;
+      if (!bidiText) return;
+      const padding = 10;
+      const cellRight = data.cell.x + data.cell.width - padding;
+      const textY = data.cell.y + data.cell.height / 2 + 3;
+      drawBidi(bidiText, cellRight, textY, { align: "right" });
+    },
   });
+
 
 
   // @ts-expect-error lastAutoTable from autoTable plugin
