@@ -8,7 +8,48 @@ const fmt = (n: number) =>
 const formatDate = (d: string | null) =>
   d ? new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "";
 
-const hasNonLatin = (s: string) => /[^\u0000-\u024F]/.test(s || "");
+const ARABIC_RE = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+const hasNonLatin = (s: string) => ARABIC_RE.test(s || "");
+const isArabicChar = (c: string) => ARABIC_RE.test(c);
+
+// Split text into directional runs (Arabic vs Latin). Weak chars (digits,
+// punctuation, whitespace) stick to the current run for natural grouping.
+function segmentRuns(text: string): { text: string; isRtl: boolean }[] {
+  const runs: { text: string; isRtl: boolean }[] = [];
+  let cur = "";
+  let curRtl: boolean | null = null;
+  const weak = /[\s0-9.,:;!?@()\-\/+_=%$#&'"\[\]{}]/;
+  for (const ch of Array.from(text)) {
+    if (weak.test(ch)) {
+      cur += ch;
+      continue;
+    }
+    const r = isArabicChar(ch);
+    if (curRtl === null) {
+      curRtl = r;
+      cur += ch;
+      continue;
+    }
+    if (r === curRtl) {
+      cur += ch;
+    } else {
+      runs.push({ text: cur, isRtl: curRtl });
+      cur = ch;
+      curRtl = r;
+    }
+  }
+  if (cur) runs.push({ text: cur, isRtl: curRtl ?? false });
+  return runs;
+}
+
+// Base paragraph direction from first strong character (UAX#9 simplified).
+function baseDir(text: string): "rtl" | "ltr" {
+  for (const ch of Array.from(text)) {
+    if (ARABIC_RE.test(ch)) return "rtl";
+    if (/[A-Za-z]/.test(ch)) return "ltr";
+  }
+  return "ltr";
+}
 
 // Cache the base64 Arabic font across calls
 let arabicFontB64: string | null = null;
@@ -59,6 +100,57 @@ export async function generatePlatformInvoicePdf(invoice: PlatformInvoice) {
     }
   };
 
+  // Bidi-aware text drawer: segments mixed Arabic/Latin text into runs and
+  // renders each run with the proper font in correct visual order based on
+  // the paragraph's base direction. Prevents reversed words, broken numbers,
+  // and box glyphs from font/script mismatch.
+  const drawBidi = (
+    text: string,
+    x: number,
+    y: number,
+    opts: { align?: "left" | "right" | "center"; style?: "normal" | "bold" } = {}
+  ) => {
+    const value = String(text ?? "");
+    const style = opts.style ?? "normal";
+    const align = opts.align ?? "left";
+
+    // Pure Latin: fast path
+    if (!hasNonLatin(value)) {
+      doc.setFont("helvetica", style);
+      doc.text(value, x, y, { align });
+      return;
+    }
+
+    // Arabic font unavailable: fall back to single-font render with RTL hint
+    if (!arabicReady) {
+      doc.setFont("helvetica", style);
+      doc.text(value, x, y, { align, isInputRtl: true } as any);
+      return;
+    }
+
+    const dir = baseDir(value);
+    const runs = segmentRuns(value);
+    const widths = runs.map((r) => {
+      doc.setFont(r.isRtl ? "NotoArabic" : "helvetica", style);
+      return doc.getTextWidth(r.text);
+    });
+    const total = widths.reduce((a, b) => a + b, 0);
+
+    let startX = x;
+    if (align === "right") startX = x - total;
+    else if (align === "center") startX = x - total / 2;
+
+    // RTL base: lay runs in reverse visual order (logical-first run sits at the right).
+    const order = dir === "rtl" ? runs.map((_, i) => runs.length - 1 - i) : runs.map((_, i) => i);
+    let cursor = startX;
+    for (const i of order) {
+      const r = runs[i];
+      doc.setFont(r.isRtl ? "NotoArabic" : "helvetica", style);
+      doc.text(r.text, cursor, y, r.isRtl ? ({ isInputRtl: true } as any) : undefined);
+      cursor += widths[i];
+    }
+  };
+
   // Top dark header bar
   doc.setFillColor(15, 23, 42);
   doc.rect(0, 0, pageWidth, 100, "F");
@@ -94,24 +186,20 @@ export async function generatePlatformInvoicePdf(invoice: PlatformInvoice) {
   doc.setTextColor(15, 23, 42);
   doc.setFontSize(12);
   y += 18;
-  setSmartFont(invoice.to_organization_name, "bold");
-  const orgIsRtl = hasNonLatin(invoice.to_organization_name);
-  if (orgIsRtl) {
-    doc.text(invoice.to_organization_name, pageWidth - margin, y, {
-      align: "right",
-      isInputRtl: true,
-    } as any);
-  } else {
-    doc.text(invoice.to_organization_name, margin, y);
-  }
+  const orgIsRtl = baseDir(invoice.to_organization_name) === "rtl";
+  drawBidi(invoice.to_organization_name, orgIsRtl ? pageWidth - margin : margin, y, {
+    align: orgIsRtl ? "right" : "left",
+    style: "bold",
+  });
   if (invoice.to_email) {
     y += 14;
-    doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
-    doc.text(invoice.to_email, orgIsRtl ? pageWidth - margin : margin, y, {
+    // email is always Latin; align to match the org-name side for visual cohesion
+    drawBidi(invoice.to_email, orgIsRtl ? pageWidth - margin : margin, y, {
       align: orgIsRtl ? "right" : "left",
     });
   }
+
 
 
   // Right side: invoice meta block
@@ -140,8 +228,11 @@ export async function generatePlatformInvoicePdf(invoice: PlatformInvoice) {
       : "";
 
   const descText = invoice.description || "Hisabaty Subscription";
-  const descIsRtl = arabicReady && hasNonLatin(descText);
-  const descFont = descIsRtl ? "NotoArabic" : "helvetica";
+  const descHasArabic = arabicReady && hasNonLatin(descText);
+  const descHasLatin = /[A-Za-z]/.test(descText);
+  const descIsMixed = descHasArabic && descHasLatin;
+  const descIsRtl = descHasArabic; // RTL base whenever Arabic is present
+  const descColIndex = descIsRtl ? 4 : 0;
 
   autoTable(doc, {
     startY: tableStart,
@@ -171,16 +262,39 @@ export async function generatePlatformInvoicePdf(invoice: PlatformInvoice) {
           1: { halign: "right", cellWidth: 80 },
           2: { halign: "center", cellWidth: 40 },
           3: { halign: "right" },
-          4: { font: descFont, halign: "right" },
+          4: { font: "NotoArabic", halign: "right" },
         }
       : {
-          0: { font: descFont },
+          0: { font: descHasArabic ? "NotoArabic" : "helvetica" },
           2: { halign: "center", cellWidth: 40 },
           3: { halign: "right", cellWidth: 80 },
           4: { halign: "right", cellWidth: 80 },
         },
     margin: { left: margin, right: margin },
+    // For mixed-script description cells autoTable cannot multi-font a single
+    // string, so blank the default text and repaint with the bidi drawer.
+    didParseCell: (data) => {
+      if (
+        descIsMixed &&
+        data.section === "body" &&
+        data.column.index === descColIndex
+      ) {
+        // hide default text by matching color to fill (transparent overpaint
+        // happens in didDrawCell)
+        (data.cell as any)._bidiText = descText;
+        data.cell.text = [""];
+      }
+    },
+    didDrawCell: (data) => {
+      const bidiText = (data.cell as any)._bidiText;
+      if (!bidiText) return;
+      const padding = 10;
+      const cellRight = data.cell.x + data.cell.width - padding;
+      const textY = data.cell.y + data.cell.height / 2 + 3;
+      drawBidi(bidiText, cellRight, textY, { align: "right" });
+    },
   });
+
 
 
   // @ts-expect-error lastAutoTable from autoTable plugin
