@@ -95,13 +95,24 @@ export async function generatePlatformInvoicePdf(invoice: PlatformInvoice) {
   doc.setFontSize(12);
   y += 18;
   setSmartFont(invoice.to_organization_name, "bold");
-  doc.text(invoice.to_organization_name, margin, y);
+  const orgIsRtl = hasNonLatin(invoice.to_organization_name);
+  if (orgIsRtl) {
+    doc.text(invoice.to_organization_name, pageWidth - margin, y, {
+      align: "right",
+      isInputRtl: true,
+    } as any);
+  } else {
+    doc.text(invoice.to_organization_name, margin, y);
+  }
   if (invoice.to_email) {
     y += 14;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
-    doc.text(invoice.to_email, margin, y);
+    doc.text(invoice.to_email, orgIsRtl ? pageWidth - margin : margin, y, {
+      align: orgIsRtl ? "right" : "left",
+    });
   }
+
 
   // Right side: invoice meta block
   let metaY = 140;
@@ -129,13 +140,21 @@ export async function generatePlatformInvoicePdf(invoice: PlatformInvoice) {
       : "";
 
   const descText = invoice.description || "Hisabaty Subscription";
-  const descFont = arabicReady && hasNonLatin(descText) ? "NotoArabic" : "helvetica";
+  const descIsRtl = arabicReady && hasNonLatin(descText);
+  const descFont = descIsRtl ? "NotoArabic" : "helvetica";
 
   autoTable(doc, {
     startY: tableStart,
-    head: [["Description", "Period", "Qty", "Unit Price", "Amount"]],
+    // Reverse columns when description is RTL so reading flows right-to-left
+    head: [
+      descIsRtl
+        ? ["Amount", "Unit Price", "Qty", "Period", "Description"]
+        : ["Description", "Period", "Qty", "Unit Price", "Amount"],
+    ],
     body: [
-      [descText, periodLabel, "1", fmt(invoice.amount_usd), fmt(invoice.amount_usd)],
+      descIsRtl
+        ? [fmt(invoice.amount_usd), fmt(invoice.amount_usd), "1", periodLabel, descText]
+        : [descText, periodLabel, "1", fmt(invoice.amount_usd), fmt(invoice.amount_usd)],
     ],
     headStyles: {
       fillColor: [15, 23, 42],
@@ -143,16 +162,26 @@ export async function generatePlatformInvoicePdf(invoice: PlatformInvoice) {
       fontStyle: "bold",
       fontSize: 10,
       font: "helvetica",
+      halign: descIsRtl ? "right" : "left",
     },
     styles: { fontSize: 10, cellPadding: 10, font: "helvetica" },
-    columnStyles: {
-      0: { font: descFont },
-      2: { halign: "center", cellWidth: 40 },
-      3: { halign: "right", cellWidth: 80 },
-      4: { halign: "right", cellWidth: 80 },
-    },
+    columnStyles: descIsRtl
+      ? {
+          0: { halign: "right", cellWidth: 80 },
+          1: { halign: "right", cellWidth: 80 },
+          2: { halign: "center", cellWidth: 40 },
+          3: { halign: "right" },
+          4: { font: descFont, halign: "right" },
+        }
+      : {
+          0: { font: descFont },
+          2: { halign: "center", cellWidth: 40 },
+          3: { halign: "right", cellWidth: 80 },
+          4: { halign: "right", cellWidth: 80 },
+        },
     margin: { left: margin, right: margin },
   });
+
 
   // @ts-expect-error lastAutoTable from autoTable plugin
   let endY = doc.lastAutoTable.finalY + 24;
