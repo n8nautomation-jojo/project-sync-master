@@ -8,7 +8,48 @@ const fmt = (n: number) =>
 const formatDate = (d: string | null) =>
   d ? new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "";
 
-const hasNonLatin = (s: string) => /[^\u0000-\u024F]/.test(s || "");
+const ARABIC_RE = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+const hasNonLatin = (s: string) => ARABIC_RE.test(s || "");
+const isArabicChar = (c: string) => ARABIC_RE.test(c);
+
+// Split text into directional runs (Arabic vs Latin). Weak chars (digits,
+// punctuation, whitespace) stick to the current run for natural grouping.
+function segmentRuns(text: string): { text: string; isRtl: boolean }[] {
+  const runs: { text: string; isRtl: boolean }[] = [];
+  let cur = "";
+  let curRtl: boolean | null = null;
+  const weak = /[\s0-9.,:;!?@()\-\/+_=%$#&'"\[\]{}]/;
+  for (const ch of Array.from(text)) {
+    if (weak.test(ch)) {
+      cur += ch;
+      continue;
+    }
+    const r = isArabicChar(ch);
+    if (curRtl === null) {
+      curRtl = r;
+      cur += ch;
+      continue;
+    }
+    if (r === curRtl) {
+      cur += ch;
+    } else {
+      runs.push({ text: cur, isRtl: curRtl });
+      cur = ch;
+      curRtl = r;
+    }
+  }
+  if (cur) runs.push({ text: cur, isRtl: curRtl ?? false });
+  return runs;
+}
+
+// Base paragraph direction from first strong character (UAX#9 simplified).
+function baseDir(text: string): "rtl" | "ltr" {
+  for (const ch of Array.from(text)) {
+    if (ARABIC_RE.test(ch)) return "rtl";
+    if (/[A-Za-z]/.test(ch)) return "ltr";
+  }
+  return "ltr";
+}
 
 // Cache the base64 Arabic font across calls
 let arabicFontB64: string | null = null;
