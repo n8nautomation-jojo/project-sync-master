@@ -186,24 +186,20 @@ export async function generatePlatformInvoicePdf(invoice: PlatformInvoice) {
   doc.setTextColor(15, 23, 42);
   doc.setFontSize(12);
   y += 18;
-  setSmartFont(invoice.to_organization_name, "bold");
-  const orgIsRtl = hasNonLatin(invoice.to_organization_name);
-  if (orgIsRtl) {
-    doc.text(invoice.to_organization_name, pageWidth - margin, y, {
-      align: "right",
-      isInputRtl: true,
-    } as any);
-  } else {
-    doc.text(invoice.to_organization_name, margin, y);
-  }
+  const orgIsRtl = baseDir(invoice.to_organization_name) === "rtl";
+  drawBidi(invoice.to_organization_name, orgIsRtl ? pageWidth - margin : margin, y, {
+    align: orgIsRtl ? "right" : "left",
+    style: "bold",
+  });
   if (invoice.to_email) {
     y += 14;
-    doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
-    doc.text(invoice.to_email, orgIsRtl ? pageWidth - margin : margin, y, {
+    // email is always Latin; align to match the org-name side for visual cohesion
+    drawBidi(invoice.to_email, orgIsRtl ? pageWidth - margin : margin, y, {
       align: orgIsRtl ? "right" : "left",
     });
   }
+
 
 
   // Right side: invoice meta block
