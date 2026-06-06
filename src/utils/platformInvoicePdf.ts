@@ -8,11 +8,56 @@ const fmt = (n: number) =>
 const formatDate = (d: string | null) =>
   d ? new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "";
 
-export function generatePlatformInvoicePdf(invoice: PlatformInvoice) {
+const hasNonLatin = (s: string) => /[^\u0000-\u024F]/.test(s || "");
+
+// Cache the base64 Arabic font across calls
+let arabicFontB64: string | null = null;
+const ARABIC_FONT_URL =
+  "https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-arabic@5.0.13/files/noto-sans-arabic-arabic-400-normal.woff";
+const ARABIC_FONT_TTF_URL =
+  "https://raw.githubusercontent.com/googlefonts/noto-fonts/main/hinted/ttf/NotoNaskhArabic/NotoNaskhArabic-Regular.ttf";
+
+async function loadArabicFont(doc: jsPDF): Promise<boolean> {
+  try {
+    if (!arabicFontB64) {
+      const res = await fetch(ARABIC_FONT_TTF_URL);
+      if (!res.ok) throw new Error("font fetch failed");
+      const buf = new Uint8Array(await res.arrayBuffer());
+      let bin = "";
+      const chunk = 0x8000;
+      for (let i = 0; i < buf.length; i += chunk) {
+        bin += String.fromCharCode.apply(null, Array.from(buf.subarray(i, i + chunk)));
+      }
+      arabicFontB64 = btoa(bin);
+    }
+    doc.addFileToVFS("NotoNaskhArabic.ttf", arabicFontB64);
+    doc.addFont("NotoNaskhArabic.ttf", "NotoArabic", "normal");
+    doc.addFont("NotoNaskhArabic.ttf", "NotoArabic", "bold");
+    return true;
+  } catch (e) {
+    console.warn("Arabic font load failed, falling back to helvetica", e);
+    return false;
+  }
+}
+
+export async function generatePlatformInvoicePdf(invoice: PlatformInvoice) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 48;
+
+  const needsArabic = [invoice.to_organization_name, invoice.description, invoice.from_address]
+    .some((v) => hasNonLatin(String(v || "")));
+  const arabicReady = needsArabic ? await loadArabicFont(doc) : false;
+
+  // Helper: pick the right font for a value
+  const setSmartFont = (value: string, style: "normal" | "bold" = "normal") => {
+    if (arabicReady && hasNonLatin(value)) {
+      doc.setFont("NotoArabic", style);
+    } else {
+      doc.setFont("helvetica", style);
+    }
+  };
 
   // Top dark header bar
   doc.setFillColor(15, 23, 42);
@@ -49,6 +94,7 @@ export function generatePlatformInvoicePdf(invoice: PlatformInvoice) {
   doc.setTextColor(15, 23, 42);
   doc.setFontSize(12);
   y += 18;
+  setSmartFont(invoice.to_organization_name, "bold");
   doc.text(invoice.to_organization_name, margin, y);
   if (invoice.to_email) {
     y += 14;
@@ -82,21 +128,25 @@ export function generatePlatformInvoicePdf(invoice: PlatformInvoice) {
       ? `${formatDate(invoice.period_start)}  —  ${formatDate(invoice.period_end)}`
       : "";
 
+  const descText = invoice.description || "Hisabaty Subscription";
+  const descFont = arabicReady && hasNonLatin(descText) ? "NotoArabic" : "helvetica";
+
   autoTable(doc, {
     startY: tableStart,
     head: [["Description", "Period", "Qty", "Unit Price", "Amount"]],
     body: [
-      [
-        invoice.description || "Hisabaty Subscription",
-        periodLabel,
-        "1",
-        fmt(invoice.amount_usd),
-        fmt(invoice.amount_usd),
-      ],
+      [descText, periodLabel, "1", fmt(invoice.amount_usd), fmt(invoice.amount_usd)],
     ],
-    headStyles: { fillColor: [15, 23, 42], textColor: 255, fontStyle: "bold", fontSize: 10 },
-    styles: { fontSize: 10, cellPadding: 10 },
+    headStyles: {
+      fillColor: [15, 23, 42],
+      textColor: 255,
+      fontStyle: "bold",
+      fontSize: 10,
+      font: "helvetica",
+    },
+    styles: { fontSize: 10, cellPadding: 10, font: "helvetica" },
     columnStyles: {
+      0: { font: descFont },
       2: { halign: "center", cellWidth: 40 },
       3: { halign: "right", cellWidth: 80 },
       4: { halign: "right", cellWidth: 80 },
