@@ -177,7 +177,12 @@ export async function generatePlatformInvoicePdf(invoice: PlatformInvoice) {
     const dir = baseDir(value);
     const runs = segmentRuns(value);
     const widths = runs.map((r) => {
-      doc.setFont(r.isRtl ? "NotoArabic" : "helvetica", style);
+      // Numeric runs always render with a font that supports their digits,
+      // but never with the RTL input flag — digits stay left-to-right.
+      const font = r.isNum
+        ? (ARABIC_DIGIT_RE.test(r.text) ? "NotoArabic" : "helvetica")
+        : (r.isRtl ? "NotoArabic" : "helvetica");
+      doc.setFont(font, style);
       return doc.getTextWidth(r.text);
     });
     const total = widths.reduce((a, b) => a + b, 0);
@@ -187,12 +192,19 @@ export async function generatePlatformInvoicePdf(invoice: PlatformInvoice) {
     else if (align === "center") startX = x - total / 2;
 
     // RTL base: lay runs in reverse visual order (logical-first run sits at the right).
+    // Numeric runs themselves are NOT internally reversed — only their slot
+    // position swaps, matching UAX#9 behavior for numbers in RTL paragraphs.
     const order = dir === "rtl" ? runs.map((_, i) => runs.length - 1 - i) : runs.map((_, i) => i);
     let cursor = startX;
     for (const i of order) {
       const r = runs[i];
-      doc.setFont(r.isRtl ? "NotoArabic" : "helvetica", style);
-      doc.text(r.text, cursor, y, r.isRtl ? ({ isInputRtl: true } as any) : undefined);
+      const font = r.isNum
+        ? (ARABIC_DIGIT_RE.test(r.text) ? "NotoArabic" : "helvetica")
+        : (r.isRtl ? "NotoArabic" : "helvetica");
+      doc.setFont(font, style);
+      // Apply isInputRtl ONLY for Arabic letter runs, never for numeric runs.
+      const useRtlHint = r.isRtl && !r.isNum;
+      doc.text(r.text, cursor, y, useRtlHint ? ({ isInputRtl: true } as any) : undefined);
       cursor += widths[i];
     }
   };
