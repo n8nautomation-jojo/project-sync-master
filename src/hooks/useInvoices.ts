@@ -210,7 +210,7 @@ export const useInvoices = () => {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("invoices").delete().eq("id", id);
+      const { error } = await (supabase as any).rpc('soft_delete_invoice', { _invoice_id: id });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -218,7 +218,15 @@ export const useInvoices = () => {
       toast({ title: "تم الحذف", description: "تم حذف الفاتورة" });
     },
     onError: (e: Error) => {
-      toast({ title: "خطأ", description: e.message, variant: "destructive" });
+      const msg = e.message || "";
+      const friendly = msg.includes("NOT_AUTHORIZED")
+        ? "ليس لديك صلاحية حذف هذه الفاتورة"
+        : msg.includes("INVOICE_NOT_FOUND")
+          ? "الفاتورة غير موجودة أو تم حذفها بالفعل"
+          : msg.includes("PAID_INVOICE_LOCKED")
+            ? "لا يمكن حذف فاتورة مدفوعة"
+            : "فشل في حذف الفاتورة";
+      toast({ title: "خطأ", description: friendly, variant: "destructive" });
     },
   });
 
