@@ -271,27 +271,31 @@ export async function generatePlatformInvoicePdf(invoice: PlatformInvoice) {
           4: { halign: "right", cellWidth: 80 },
         },
     margin: { left: margin, right: margin },
-    // For mixed-script description cells autoTable cannot multi-font a single
-    // string, so blank the default text and repaint with the bidi drawer.
+    // Bidi-aware rendering for EVERY body cell (not just description).
+    // autoTable cannot multi-font a single string, so we blank the default
+    // text and repaint each cell with the bidi drawer using the column's
+    // configured horizontal alignment.
     didParseCell: (data) => {
-      if (
-        descIsMixed &&
-        data.section === "body" &&
-        data.column.index === descColIndex
-      ) {
-        // hide default text by matching color to fill (transparent overpaint
-        // happens in didDrawCell)
-        (data.cell as any)._bidiText = descText;
-        data.cell.text = [""];
-      }
+      if (data.section !== "body") return;
+      const raw = Array.isArray(data.cell.text)
+        ? data.cell.text.join(" ")
+        : String(data.cell.text ?? "");
+      (data.cell as any)._bidiText = raw;
+      (data.cell as any)._bidiHalign =
+        (data.cell.styles?.halign as "left" | "right" | "center") || "left";
+      data.cell.text = [""];
     },
     didDrawCell: (data) => {
+      if (data.section !== "body") return;
       const bidiText = (data.cell as any)._bidiText;
       if (!bidiText) return;
+      const halign = (data.cell as any)._bidiHalign as "left" | "right" | "center";
       const padding = 10;
-      const cellRight = data.cell.x + data.cell.width - padding;
+      let x = data.cell.x + padding;
+      if (halign === "right") x = data.cell.x + data.cell.width - padding;
+      else if (halign === "center") x = data.cell.x + data.cell.width / 2;
       const textY = data.cell.y + data.cell.height / 2 + 3;
-      drawBidi(bidiText, cellRight, textY, { align: "right" });
+      drawBidi(bidiText, x, textY, { align: halign });
     },
   });
 
