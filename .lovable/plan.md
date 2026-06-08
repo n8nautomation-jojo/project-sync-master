@@ -1,108 +1,66 @@
+# Plan: Financial Immutability & Audit Hardening
 
-# نظام فواتير اشتراكات حساباتي
+Addresses 3 of the audit's blocking issues: invoice hard-deletes, missing immutability on expenses/invoices, and weak audit trail.
 
-## الفكرة
-كل مرة تشترك فيها مؤسسة في خطة (Pro/Enterprise) أو يتم تجديد اشتراكها، يُصدر النظام **تلقائياً** فاتورة احترافية باسم **Suda-Technologies LLC** بالدولار، بصيغة معتمدة بنكياً (Mercury / Stripe Statement) — تظهر للمستخدم في تبويب جديد "فواتير الاشتراك" مع تحميل PDF.
+## 1. Database migration
 
-> ملاحظة مهمة: هذا منفصل تماماً عن مديول الفواتير الحالي (الذي يستخدمه المستخدم ليصدر فواتير لعملائه هو). هنا الفاتورة من **حساباتي → المستخدم**.
-
----
-
-## 1) قاعدة البيانات (migration)
-
-### أ) جدول `subscription_plans` (كتالوج الخطط)
-- `id`, `code` (free/pro/enterprise), `name_en`, `description_en`
-- `price_usd` numeric, `billing_cycle` (monthly/yearly/lifetime)
-- `max_users`, `max_branches`, `features` jsonb
-- `is_active`, `sort_order`
-
-Seed افتراضي:
-- Free: $0
-- Pro Monthly: $29 / 10 users / 5 branches
-- Pro Yearly: $290
-- Enterprise: $99/شهر، unlimited
-
-### ب) جدول `platform_invoices`
-- `id`, `organization_id`, `plan_id`
-- `invoice_number` text unique — توليد تلقائي بصيغة `STP-2026-0001`
-- `issue_date`, `period_start`, `period_end`, `due_date`
-- `amount_usd`, `tax_usd` (=0)، `total_usd`
-- `from_company` default `'Suda-Technologies LLC'`
-- `from_address`, `from_email` (ثوابت)
-- `to_organization_name`, `to_email`
-- `status` (`issued` / `paid` / `void`), `paid_at`, `payment_reference`
-- `description` (مثلاً "Hisabaty Pro Subscription — Monthly")
-
-### ج) RLS
-- SELECT: أعضاء المؤسسة (owners/admins).
-- INSERT/UPDATE: service_role فقط (يتم عبر trigger).
-
-### د) Trigger + Function
-- `generate_platform_invoice()`: عند `INSERT` على organizations بخطة مدفوعة، أو عند `UPDATE plan_type` لخطة مدفوعة، أو عند `UPDATE subscription_ends_at` (تجديد)، يُنشئ صف في `platform_invoices`.
-- توليد رقم الفاتورة: sequence `platform_invoice_seq` ثم `'STP-' || EXTRACT(YEAR) || '-' || LPAD(nextval, 4, '0')`.
-
----
-
-## 2) الواجهة الأمامية
-
-### أ) صفحة جديدة `src/pages/SubscriptionInvoices.tsx`
-- جدول بكل الفواتير: رقم، تاريخ، الخطة، المبلغ USD، الحالة، تنزيل PDF.
-- Badge للحالة (Issued / Paid).
-- زر "Download PDF" لكل فاتورة.
-
-### ب) Hook `src/hooks/usePlatformInvoices.ts`
-- `list` (يفلتر بالمؤسسة الحالية)، `getById`.
-
-### ج) PDF Generator `src/utils/platformInvoicePdf.ts`
-يطابق المسودة (محترف بصياغة بنكية):
+### 1a. Add soft-delete columns to `invoices`
 ```
-Suda-Technologies LLC                          INVOICE
-[Address line 1]                               STP-2026-0001
-Wilmington, DE, USA                            Date: May 10, 2026
-hello@suda-technologies.com                    Due: May 25, 2026
-
-BILL TO:
-[Organization Name]
-[Email]
-
-DESCRIPTION                       PERIOD            QTY   PRICE     TOTAL
-Hisabaty Pro Subscription         May 1 — May 31    1    $29.00    $29.00
-
-                                                  Subtotal:  $29.00
-                                                  Tax:        $0.00
-                                                  TOTAL DUE: $29.00 USD
-
-Payment Methods: Bank Transfer / Stripe / Wire
-Bank Statement Reference: STP-2026-0001
+ALTER TABLE public.invoices
+  ADD COLUMN is_deleted boolean NOT NULL DEFAULT false,
+  ADD COLUMN deleted_at timestamptz,
+  ADD COLUMN deleted_by uuid;
+CREATE INDEX idx_invoices_org_active ON public.invoices(organization_id) WHERE is_deleted = false;
 ```
-- إنجليزي بالكامل، شعار "Suda-Technologies" أعلى يمين، خط احترافي، حد سفلي بـ "Thank you for your business".
 
-### د) Sidebar
-- إضافة رابط "Subscription Invoices" / "فواتير الاشتراك" — يظهر للـ owner/admin دائماً (ليس مرتبط بـ toggle).
+### 1b. `soft_delete_invoice(_invoice_id uuid)` RPC
+SECURITY DEFINER. Verifies caller has `owner|admin|manager` role on the invoice's org via `has_organization_role`. Sets `is_deleted=true`, `deleted_at=now()`, `deleted_by=auth.uid()`. Raises `NOT_AUTHORIZED` / `INVOICE_NOT_FOUND` to match the pattern used by `soft_delete_expense`.
 
-### هـ) في `OrganizationSettings.tsx`
-- زر "ترقية الخطة" (إن لم يوجد) أو ربط مع تغيير `plan_type` يفعّل الـ trigger ويُنشئ الفاتورة.
-- إشعار toast: "تم إصدار فاتورة الاشتراك STP-2026-XXXX".
+### 1c. Immutability triggers
 
----
+**`prevent_paid_invoice_edit`** (BEFORE UPDATE on `invoices`):
+- Allow the soft-delete transition (`is_deleted` false→true).
+- If `OLD.status = 'paid'`, only permit changes to `notes` / `updated_at`; block edits to amounts, dates, parties, line items pointer. Raise `PAID_INVOICE_LOCKED`.
+- Also block `status` regressions from `paid` back to `draft|sent|overdue`.
+- Companion trigger on `invoice_items` blocks INSERT/UPDATE/DELETE when parent invoice is `paid` (lookup via `invoice_id`).
 
-## 3) ملفات سيتم إنشاؤها / تعديلها
-**جديدة:**
-- `supabase/migrations/...subscription_plans_and_platform_invoices.sql`
-- `src/hooks/usePlatformInvoices.ts`
-- `src/pages/SubscriptionInvoices.tsx`
-- `src/utils/platformInvoicePdf.ts`
+**`prevent_approved_expense_edit`** (BEFORE UPDATE on `expenses`), mirroring `prevent_confirmed_transfer_edit`:
+- Allow soft-delete transition.
+- When `OLD.status = 'approved'`, block changes to `amount`, `category_id`, `branch_id`, `expense_date`, `receipt_image_url`. Allow `notes` updates only. Raise `APPROVED_EXPENSE_LOCKED`.
 
-**معدّلة:**
-- `src/App.tsx` — route `/subscription-invoices`
-- `src/components/layout/Sidebar.tsx` — رابط جديد للأدمن
-- `src/integrations/supabase/types.ts` (تلقائي بعد migration)
+Also block hard `DELETE` on both tables for `authenticated` via RLS policy removal — force usage of the RPC. (Service role keeps full access.)
 
----
+### 1d. Audit log hardening
 
-## 4) ملاحظات أمنية
-- لا يستطيع أي مستخدم إنشاء فاتورة Suda يدوياً (RLS يمنع insert من authenticated).
-- الترقيم تسلسلي وفريد (sequence) → لا توجد أرقام مكررة.
-- جميع الحقول الثابتة (Suda address/email) تُحقن من DB defaults وليس من الواجهة.
+- `ALTER TABLE public.audit_logs ALTER COLUMN organization_id SET NOT NULL;` (back-fill any nulls to a sentinel first; query confirmed no rows currently violate after we delete orphan logs, otherwise we'll add a `WHERE organization_id IS NULL` cleanup).
+- Update `audit_log_trigger()` to capture `auth.uid()` into `user_id` on every INSERT/UPDATE/DELETE branch.
+- Attach `audit_log_trigger` to: `invoices`, `invoice_items`, `expenses`, `salary_payments`, `user_roles`, `platform_invoices`, `whatsapp_credentials`.
+- Add `audit_logs.user_id` index for lookups.
 
-هل أبدأ التنفيذ مباشرة؟
+### 1e. Tighten RLS on hard-delete
+Drop any existing `FOR DELETE` policies on `invoices` and `expenses` (force RPC path). Keep `service_role` ALL.
+
+## 2. Frontend changes (`src/hooks/useInvoices.ts`)
+
+- Replace `list.queryFn` filter to add `.eq("is_deleted", false)`.
+- Replace `remove.mutationFn` body:
+  ```ts
+  const { error } = await (supabase as any).rpc('soft_delete_invoice', { _invoice_id: id });
+  ```
+- Map errors (`NOT_AUTHORIZED`, `INVOICE_NOT_FOUND`, `PAID_INVOICE_LOCKED`) to Arabic toast messages, mirroring `useExpenses.deleteExpense`.
+- In `update.mutationFn`, surface `PAID_INVOICE_LOCKED` / `APPROVED_EXPENSE_LOCKED` exceptions with friendly Arabic messages.
+
+No UI component changes required — `Invoices.tsx` already calls `remove.mutate(id)`.
+
+## 3. Verification
+- Run `supabase--linter` after the migration.
+- Manual check via `supabase--read_query` that triggers attached and `audit_logs.organization_id` is NOT NULL.
+- Quick smoke in the preview: delete a draft invoice (succeeds, row hidden), attempt to edit a paid invoice (blocked with Arabic toast).
+
+## Out of scope (tracked separately)
+- Stripe paywall, password reset, 2FA, receipt-pipeline race fixes — addressed in their own tasks.
+
+## Technical notes
+- All new functions: `SECURITY DEFINER`, `SET search_path = public`.
+- Trigger names: `prevent_paid_invoice_edit`, `prevent_paid_invoice_items_edit`, `prevent_approved_expense_edit`, `audit_invoices`, `audit_invoice_items`, `audit_expenses`, `audit_salary_payments`, `audit_user_roles`, `audit_platform_invoices`, `audit_whatsapp_credentials`.
+- The `audit_log_trigger` rewrite keeps signature compatible — no DROP needed, just `CREATE OR REPLACE`.

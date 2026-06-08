@@ -21,7 +21,7 @@ export type Database = {
           id: string
           new_data: Json | null
           old_data: Json | null
-          organization_id: string | null
+          organization_id: string
           record_id: string | null
           table_name: string
           user_id: string | null
@@ -32,7 +32,7 @@ export type Database = {
           id?: string
           new_data?: Json | null
           old_data?: Json | null
-          organization_id?: string | null
+          organization_id: string
           record_id?: string | null
           table_name: string
           user_id?: string | null
@@ -43,7 +43,7 @@ export type Database = {
           id?: string
           new_data?: Json | null
           old_data?: Json | null
-          organization_id?: string | null
+          organization_id?: string
           record_id?: string | null
           table_name?: string
           user_id?: string | null
@@ -453,6 +453,8 @@ export type Database = {
           created_at: string
           created_by: string | null
           currency: string
+          deleted_at: string | null
+          deleted_by: string | null
           due_date: string | null
           from_address: string | null
           from_company: string
@@ -460,6 +462,7 @@ export type Database = {
           id: string
           invoice_date: string
           invoice_number: string
+          is_deleted: boolean
           notes: string | null
           organization_id: string
           project_name: string | null
@@ -477,6 +480,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           currency?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           due_date?: string | null
           from_address?: string | null
           from_company: string
@@ -484,6 +489,7 @@ export type Database = {
           id?: string
           invoice_date?: string
           invoice_number: string
+          is_deleted?: boolean
           notes?: string | null
           organization_id: string
           project_name?: string | null
@@ -501,6 +507,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           currency?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           due_date?: string | null
           from_address?: string | null
           from_company?: string
@@ -508,6 +516,7 @@ export type Database = {
           id?: string
           invoice_date?: string
           invoice_number?: string
+          is_deleted?: boolean
           notes?: string | null
           organization_id?: string
           project_name?: string | null
@@ -1477,6 +1486,7 @@ export type Database = {
         Returns: number
       }
       soft_delete_expense: { Args: { _expense_id: string }; Returns: boolean }
+      soft_delete_invoice: { Args: { _invoice_id: string }; Returns: boolean }
       user_has_full_access: {
         Args: { _organization_id: string; _user_id: string }
         Returns: boolean
