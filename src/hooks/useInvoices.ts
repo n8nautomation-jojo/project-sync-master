@@ -71,6 +71,7 @@ export const useInvoices = () => {
         .from("invoices")
         .select("*")
         .eq("organization_id", orgId!)
+        .eq("is_deleted", false)
         .order("invoice_date", { ascending: false });
       if (error) throw error;
       return data as Invoice[];
