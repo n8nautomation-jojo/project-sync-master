@@ -204,7 +204,11 @@ export const useInvoices = () => {
       toast({ title: "تم بنجاح", description: "تم تحديث الفاتورة" });
     },
     onError: (e: Error) => {
-      toast({ title: "خطأ", description: e.message, variant: "destructive" });
+      const msg = e.message || "";
+      const friendly = msg.includes("PAID_INVOICE_LOCKED")
+        ? "لا يمكن تعديل فاتورة مدفوعة"
+        : msg;
+      toast({ title: "خطأ", description: friendly, variant: "destructive" });
     },
   });
 
