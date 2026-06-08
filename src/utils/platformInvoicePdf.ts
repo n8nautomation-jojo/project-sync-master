@@ -12,18 +12,64 @@ const ARABIC_RE = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\
 const hasNonLatin = (s: string) => ARABIC_RE.test(s || "");
 const isArabicChar = (c: string) => ARABIC_RE.test(c);
 
-// Split text into directional runs (Arabic vs Latin). Weak chars (digits,
-// punctuation, whitespace) stick to the current run for natural grouping.
-function segmentRuns(text: string): { text: string; isRtl: boolean }[] {
-  const runs: { text: string; isRtl: boolean }[] = [];
+// Tokenize text into directional runs. Digit clusters (including internal
+// separators like . , : / - and Arabic-Indic digits) are ALWAYS isolated as
+// dedicated LTR runs so currency/dates/references never get flipped, even
+// when neighboring strong characters are Arabic. Other weak chars (spaces,
+// quotes, brackets, etc.) stick to the current strong run.
+const ARABIC_DIGIT_RE = /[\u0660-\u0669\u06F0-\u06F9]/; // Arabic-Indic & Extended
+const DIGIT_RE = /[0-9\u0660-\u0669\u06F0-\u06F9]/;
+const NUM_INNER_RE = /[0-9\u0660-\u0669\u06F0-\u06F9.,:/\-\u066B\u066C]/; // 1,234.50 / 01:30 / 2024-01-05
+const WEAK_RE = /[\s.,:;!?@()\-\/+_=%$#&'"\[\]{}]/;
+
+function segmentRuns(text: string): { text: string; isRtl: boolean; isNum?: boolean }[] {
+  const runs: { text: string; isRtl: boolean; isNum?: boolean }[] = [];
+  const chars = Array.from(text);
   let cur = "";
   let curRtl: boolean | null = null;
-  const weak = /[\s0-9.,:;!?@()\-\/+_=%$#&'"\[\]{}]/;
-  for (const ch of Array.from(text)) {
-    if (weak.test(ch)) {
+  const flush = () => {
+    if (cur) runs.push({ text: cur, isRtl: curRtl ?? false });
+    cur = "";
+    curRtl = null;
+  };
+
+  for (let i = 0; i < chars.length; i++) {
+    const ch = chars[i];
+
+    // Numeric cluster: greedily consume digits plus inner separators
+    // (commas, dots, colons, slashes, dashes) while next char is still
+    // numeric. Trailing separators are kept with the preceding strong run.
+    if (DIGIT_RE.test(ch)) {
+      flush();
+      let num = ch;
+      let j = i + 1;
+      while (j < chars.length) {
+        const next = chars[j];
+        if (DIGIT_RE.test(next)) {
+          num += next;
+          j++;
+        } else if (NUM_INNER_RE.test(next) && j + 1 < chars.length && DIGIT_RE.test(chars[j + 1])) {
+          // separator only counts as part of the number if followed by another digit
+          num += next;
+          j++;
+        } else {
+          break;
+        }
+      }
+      // Arabic-Indic digits render correctly with NotoArabic; ASCII digits
+      // render with helvetica. Either way the run is LTR (isRtl=false) so
+      // the visual order matches the logical order — no reversal.
+      const usesArabicDigits = ARABIC_DIGIT_RE.test(num);
+      runs.push({ text: num, isRtl: usesArabicDigits, isNum: true });
+      i = j - 1;
+      continue;
+    }
+
+    if (WEAK_RE.test(ch)) {
       cur += ch;
       continue;
     }
+
     const r = isArabicChar(ch);
     if (curRtl === null) {
       curRtl = r;
@@ -33,12 +79,12 @@ function segmentRuns(text: string): { text: string; isRtl: boolean }[] {
     if (r === curRtl) {
       cur += ch;
     } else {
-      runs.push({ text: cur, isRtl: curRtl });
+      flush();
       cur = ch;
       curRtl = r;
     }
   }
-  if (cur) runs.push({ text: cur, isRtl: curRtl ?? false });
+  flush();
   return runs;
 }
 
@@ -131,7 +177,12 @@ export async function generatePlatformInvoicePdf(invoice: PlatformInvoice) {
     const dir = baseDir(value);
     const runs = segmentRuns(value);
     const widths = runs.map((r) => {
-      doc.setFont(r.isRtl ? "NotoArabic" : "helvetica", style);
+      // Numeric runs always render with a font that supports their digits,
+      // but never with the RTL input flag — digits stay left-to-right.
+      const font = r.isNum
+        ? (ARABIC_DIGIT_RE.test(r.text) ? "NotoArabic" : "helvetica")
+        : (r.isRtl ? "NotoArabic" : "helvetica");
+      doc.setFont(font, style);
       return doc.getTextWidth(r.text);
     });
     const total = widths.reduce((a, b) => a + b, 0);
@@ -141,12 +192,19 @@ export async function generatePlatformInvoicePdf(invoice: PlatformInvoice) {
     else if (align === "center") startX = x - total / 2;
 
     // RTL base: lay runs in reverse visual order (logical-first run sits at the right).
+    // Numeric runs themselves are NOT internally reversed — only their slot
+    // position swaps, matching UAX#9 behavior for numbers in RTL paragraphs.
     const order = dir === "rtl" ? runs.map((_, i) => runs.length - 1 - i) : runs.map((_, i) => i);
     let cursor = startX;
     for (const i of order) {
       const r = runs[i];
-      doc.setFont(r.isRtl ? "NotoArabic" : "helvetica", style);
-      doc.text(r.text, cursor, y, r.isRtl ? ({ isInputRtl: true } as any) : undefined);
+      const font = r.isNum
+        ? (ARABIC_DIGIT_RE.test(r.text) ? "NotoArabic" : "helvetica")
+        : (r.isRtl ? "NotoArabic" : "helvetica");
+      doc.setFont(font, style);
+      // Apply isInputRtl ONLY for Arabic letter runs, never for numeric runs.
+      const useRtlHint = r.isRtl && !r.isNum;
+      doc.text(r.text, cursor, y, useRtlHint ? ({ isInputRtl: true } as any) : undefined);
       cursor += widths[i];
     }
   };
