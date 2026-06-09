@@ -20,7 +20,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="md:mr-64 transition-all duration-300">
         <Header onMenuToggle={() => setMobileMenuOpen(true)} />
         <NetworkStatus />
-        <main className="p-3 md:p-6 pb-20 md:pb-6 animate-in fade-in slide-in-from-bottom-2 duration-300">{children}</main>
+        <main className="p-2 md:p-6 pb-20 md:pb-6 animate-in fade-in slide-in-from-bottom-2 duration-300">{children}</main>
       </div>
       <BottomNav onMoreClick={() => setMobileMenuOpen(true)} />
     </div>
