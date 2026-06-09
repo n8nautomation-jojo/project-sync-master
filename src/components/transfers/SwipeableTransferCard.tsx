@@ -147,8 +147,15 @@ export function SwipeableTransferCard({ transfer, onOpen, onConfirm, onReject, s
         )}
 
         {showHint && (
-          <div className="absolute inset-y-0 left-2 flex items-center pointer-events-none opacity-50">
-            <ChevronLeft className="w-4 h-4 text-primary" />
+          <div className="absolute inset-y-0 left-2 flex items-center pointer-events-none">
+            <motion.div
+              animate={{ x: [0, -8, 0] }}
+              transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+              className="flex items-center gap-0.5 text-primary/60"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-4 h-4 -mr-2" />
+            </motion.div>
           </div>
         )}
       </motion.div>
