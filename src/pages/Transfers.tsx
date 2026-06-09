@@ -67,6 +67,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { InlineMemoEditor } from "@/components/transfers/InlineMemoEditor";
 import { StatusBadge } from "@/components/transfers/StatusBadge";
+import { SwipeableTransferCard } from "@/components/transfers/SwipeableTransferCard";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 function TransferDetailContent({ 
   transfer, secureImageUrl, secureImageLoading, getSecureImageUrl, setSecureImageUrl, setFullScreenImage, handleConfirm, setSelectedTransfer, setTransferToReject 
