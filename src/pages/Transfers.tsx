@@ -215,6 +215,19 @@ export default function Transfers() {
   const resetAllMutation = useResetAllTransfers();
   const updateMutation = useUpdateTransfer();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const isMobile = useIsMobile();
+  const [hintDismissed, setHintDismissed] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem("transfers_swipe_hint_seen") === "1";
+  });
+  useEffect(() => {
+    if (!isMobile || hintDismissed) return;
+    const t = setTimeout(() => {
+      localStorage.setItem("transfers_swipe_hint_seen", "1");
+      setHintDismissed(true);
+    }, 4000);
+    return () => clearTimeout(t);
+  }, [isMobile, hintDismissed]);
 
   const filteredTransfers = transfers.filter((transfer) => {
     const branchName = transfer.branches?.name || "";
