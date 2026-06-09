@@ -67,6 +67,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { InlineMemoEditor } from "@/components/transfers/InlineMemoEditor";
 import { StatusBadge } from "@/components/transfers/StatusBadge";
+import { SwipeableTransferCard } from "@/components/transfers/SwipeableTransferCard";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 function TransferDetailContent({ 
   transfer, secureImageUrl, secureImageLoading, getSecureImageUrl, setSecureImageUrl, setFullScreenImage, handleConfirm, setSelectedTransfer, setTransferToReject 
@@ -213,6 +215,19 @@ export default function Transfers() {
   const resetAllMutation = useResetAllTransfers();
   const updateMutation = useUpdateTransfer();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const isMobile = useIsMobile();
+  const [hintDismissed, setHintDismissed] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem("transfers_swipe_hint_seen") === "1";
+  });
+  useEffect(() => {
+    if (!isMobile || hintDismissed) return;
+    const t = setTimeout(() => {
+      localStorage.setItem("transfers_swipe_hint_seen", "1");
+      setHintDismissed(true);
+    }, 4000);
+    return () => clearTimeout(t);
+  }, [isMobile, hintDismissed]);
 
   const filteredTransfers = transfers.filter((transfer) => {
     const branchName = transfer.branches?.name || "";
@@ -394,8 +409,8 @@ export default function Transfers() {
         </div>
       </div>
 
-      {/* Professional Financial Table */}
-      <div className="bg-card rounded-xl border border-border/50 overflow-hidden shadow-sm">
+      {/* Professional Financial Table (desktop) / Swipeable Cards (mobile) */}
+      <div className={cn(isMobile ? "" : "bg-card rounded-xl border border-border/50 overflow-hidden shadow-sm")}>
         {isLoading ? (
           <TransfersSkeleton />
         ) : filteredTransfers.length === 0 ? (
@@ -406,6 +421,24 @@ export default function Transfers() {
             actionLabel="إضافة تحويل يدوياً"
             onAction={() => setIsAddDialogOpen(true)}
           />
+        ) : isMobile ? (
+          <div className="space-y-2.5">
+            {!hintDismissed && (
+              <p className="text-[11px] text-center text-muted-foreground bg-primary/5 border border-primary/10 rounded-lg py-2 px-3">
+                💡 اسحب البطاقة يميناً للتأكيد/الحذف، أو يساراً لفتح الإشعار
+              </p>
+            )}
+            {filteredTransfers.map((transfer, index) => (
+              <SwipeableTransferCard
+                key={transfer.id}
+                transfer={transfer}
+                onOpen={() => setSelectedTransfer(transfer)}
+                onConfirm={() => handleConfirm(transfer)}
+                onReject={() => setTransferToReject(transfer)}
+                showHint={!hintDismissed && index === 0}
+              />
+            ))}
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm" dir="rtl">
@@ -428,7 +461,6 @@ export default function Transfers() {
                     className="hover:bg-muted/20 transition-colors animate-fade-in"
                     style={{ animationDelay: `${index * 20}ms` }}
                   >
-                    {/* التاريخ والزمن */}
                     <td className="p-3 whitespace-nowrap">
                       <div>
                         <p className="font-medium text-foreground text-xs">
@@ -439,29 +471,21 @@ export default function Transfers() {
                         </p>
                       </div>
                     </td>
-
-                    {/* رقم العملية */}
                     <td className="p-3">
                       <span className="font-bold font-mono text-primary text-xs">
                         {transfer.transaction_id || "—"}
                       </span>
                     </td>
-
-                    {/* المبلغ */}
                     <td className="p-3 whitespace-nowrap">
                       <span className="font-bold text-foreground">
                         {transfer.amount.toLocaleString()}
                       </span>
                     </td>
-
-                    {/* المستلم */}
                     <td className="p-3">
                       <span className="text-foreground text-xs">
                         {transfer.receiver_account || "—"}
                       </span>
                     </td>
-
-                    {/* من حساب */}
                     <td className="p-3">
                       <div className="text-xs">
                         <p className="text-foreground">{transfer.sender_account || transfer.sender_name || "—"}</p>
@@ -470,8 +494,6 @@ export default function Transfers() {
                         )}
                       </div>
                     </td>
-
-                    {/* البيان - Inline Editable */}
                     <td className="p-3">
                       <InlineMemoEditor
                         value={transfer.client_memo}
@@ -479,13 +501,9 @@ export default function Transfers() {
                         isPending={updateMutation.isPending}
                       />
                     </td>
-
-                    {/* الحالة */}
                     <td className="p-3 text-center">
                       <StatusBadge transfer={transfer} />
                     </td>
-
-                    {/* إجراءات */}
                     <td className="p-3">
                       <div className="flex items-center justify-center gap-1">
                         <Button
