@@ -564,10 +564,11 @@ export default function Transfers() {
 
       {/* View Transfer Dialog */}
       <Dialog open={!!selectedTransfer} onOpenChange={(open) => { if (!open) { setSelectedTransfer(null); setSecureImageUrl(null); } }}>
-        <DialogContent className="max-w-2xl" dir="rtl">
-          <DialogHeader>
-            <DialogTitle>تفاصيل العملية {selectedTransfer?.transaction_id && <span className="text-primary font-mono">#{selectedTransfer.transaction_id}</span>}</DialogTitle>
+        <DialogContent className="max-w-2xl max-h-[90vh] p-0 flex flex-col gap-0" dir="rtl">
+          <DialogHeader className="px-6 pt-6 pb-3 border-b shrink-0 bg-background">
+            <DialogTitle className="pl-8 text-base sm:text-lg">تفاصيل العملية {selectedTransfer?.transaction_id && <span className="text-primary font-mono">#{selectedTransfer.transaction_id}</span>}</DialogTitle>
           </DialogHeader>
+          <div className="flex-1 overflow-y-auto px-6 py-4 overscroll-contain">
           {selectedTransfer && (
             <TransferDetailContent
               transfer={selectedTransfer}
@@ -581,6 +582,7 @@ export default function Transfers() {
               setTransferToReject={setTransferToReject}
             />
           )}
+          </div>
         </DialogContent>
       </Dialog>
 
