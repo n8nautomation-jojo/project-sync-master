@@ -427,9 +427,14 @@ async function processMessage(sb: any, msg: any): Promise<{ status: string; mess
 
     if (transferError) {
       console.error("Transfer insert error:", transferError);
-      // Check if it's a duplicate transaction_id error
-      if (transferError.message?.includes("idx_transfers_transaction_id_unique")) {
+      // Unique-violation handling (idempotency for retries)
+      const errMsg = String(transferError.message || "");
+      const errCode = (transferError as any).code;
+      if (errCode === "23505" || errMsg.includes("idx_transfers_transaction_id_unique")) {
         return { status: "duplicate_transaction", messageId };
+      }
+      if (errMsg.includes("idx_transfers_image_hash")) {
+        return { status: "duplicate_image", messageId };
       }
       await sb.from("failed_jobs").insert({
         job_type: "transfer_insert",
