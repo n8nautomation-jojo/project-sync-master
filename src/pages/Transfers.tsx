@@ -582,6 +582,7 @@ export default function Transfers() {
               setTransferToReject={setTransferToReject}
             />
           )}
+          </div>
         </DialogContent>
       </Dialog>
 
