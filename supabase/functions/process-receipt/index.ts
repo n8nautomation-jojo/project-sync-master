@@ -457,7 +457,17 @@ async function processMessage(sb: any, msg: any): Promise<{ status: string; mess
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  const sb = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
+  // Service-role-only: this function is an internal pipeline trigger.
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const authHeader = req.headers.get("authorization") || req.headers.get("Authorization") || "";
+  const presented = authHeader.toLowerCase().startsWith("bearer ") ? authHeader.slice(7).trim() : "";
+  if (!serviceKey || presented !== serviceKey) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const sb = createClient(Deno.env.get("SUPABASE_URL") ?? "", serviceKey);
 
   try {
     const { data: messages, error } = await sb
