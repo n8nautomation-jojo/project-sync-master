@@ -24,8 +24,7 @@ function isValidMsgId(id: string): boolean {
 }
 
 async function verifySignature(raw: string, sig: string | null, secret: string): Promise<boolean> {
-  if (!sig) return false;
-  if (!secret) return true;
+  if (!sig || !secret) return false;
   try {
     const [algo, hash] = sig.split("=");
     if (algo !== "sha256") return false;
@@ -76,7 +75,11 @@ serve(async (req) => {
     const mode = url.searchParams.get("hub.mode");
     const token = url.searchParams.get("hub.verify_token");
     const challenge = url.searchParams.get("hub.challenge");
-    const VERIFY_TOKEN = Deno.env.get("META_WEBHOOK_VERIFY_TOKEN") || "lovable_whatsapp_verify";
+    const VERIFY_TOKEN = Deno.env.get("META_WEBHOOK_VERIFY_TOKEN");
+    if (!VERIFY_TOKEN) {
+      console.error("META_WEBHOOK_VERIFY_TOKEN is not configured — refusing verification");
+      return new Response("Server misconfigured", { status: 500 });
+    }
     if (mode === "subscribe" && token === VERIFY_TOKEN) {
       return new Response(challenge, { status: 200, headers: { "Content-Type": "text/plain" } });
     }
@@ -91,13 +94,15 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Payload too large" }), { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Verify signature
+    // Mandatory HMAC signature verification — fail closed when secret unset.
     const META_APP_SECRET = Deno.env.get("META_APP_SECRET");
-    if (META_APP_SECRET) {
-      if (!(await verifySignature(rawBody, req.headers.get("x-hub-signature-256"), META_APP_SECRET))) {
-        await logToSystem(sb, "warn", "Invalid signature rejected");
-        return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
+    if (!META_APP_SECRET) {
+      await logToSystem(sb, "fatal", "META_APP_SECRET not configured — rejecting webhook");
+      return new Response(JSON.stringify({ error: "Server misconfigured" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (!(await verifySignature(rawBody, req.headers.get("x-hub-signature-256"), META_APP_SECRET))) {
+      await logToSystem(sb, "warn", "Invalid signature rejected");
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     let body: any;
