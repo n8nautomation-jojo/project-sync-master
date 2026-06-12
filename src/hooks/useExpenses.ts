@@ -100,9 +100,10 @@ export const useExpenses = () => {
       const { error } = await supabase.from('expenses').insert({
         organization_id: orgId!,
         created_by: user?.id,
+        idempotency_key: newIdempotencyKey(),
         ...expense,
       });
-      if (error) throw error;
+      if (error && !isIdempotencyReplay(error)) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses', orgId] });

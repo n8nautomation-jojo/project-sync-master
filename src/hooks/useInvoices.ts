@@ -105,6 +105,7 @@ export const useInvoices = () => {
     mutationFn: async (input: InvoiceInput) => {
       if (!orgId) throw new Error("لا توجد مؤسسة محددة");
       const totals = computeTotals(input);
+      const idempotencyKey = newIdempotencyKey();
       const { data: inv, error } = await supabase
         .from("invoices")
         .insert({
@@ -127,10 +128,23 @@ export const useInvoices = () => {
           total_amount: totals.total_amount,
           notes: input.notes || null,
           created_by: user?.id,
+          idempotency_key: idempotencyKey,
         })
         .select()
         .single();
-      if (error) throw error;
+      if (error) {
+        if (isIdempotencyReplay(error)) {
+          // Retry of the same submit — fetch the existing row and return it.
+          const { data: existing } = await supabase
+            .from("invoices")
+            .select()
+            .eq("organization_id", orgId)
+            .eq("idempotency_key", idempotencyKey)
+            .single();
+          if (existing) return existing;
+        }
+        throw error;
+      }
 
       if (input.items.length > 0) {
         const { error: itemsError } = await supabase.from("invoice_items").insert(

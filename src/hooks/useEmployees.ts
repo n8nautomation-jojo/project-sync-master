@@ -134,9 +134,10 @@ export const useEmployees = () => {
         paid_by: user?.id,
         status: 'paid',
         paid_at: new Date().toISOString(),
+        idempotency_key: newIdempotencyKey(),
         ...payment,
       });
-      if (error) throw error;
+      if (error && !isIdempotencyReplay(error)) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['salary-payments', orgId] });
