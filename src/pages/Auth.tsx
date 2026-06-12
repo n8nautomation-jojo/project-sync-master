@@ -168,6 +168,45 @@ export default function Auth() {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+
+      if (result.error) {
+        logAuthNav("google_signin_error", { meta: { message: result.error.message } });
+        toast({
+          title: "خطأ في تسجيل الدخول",
+          description: result.error.message,
+          variant: "destructive",
+        });
+      }
+
+      if (result.redirected) {
+        // Browser will redirect to Google — just return
+        return;
+      }
+
+      // Tokens received and session set — user is authenticated
+      logAuthNav("google_signin_success", {});
+      toast({
+        title: "تم تسجيل الدخول بنجاح",
+        description: "مرحباً بك",
+      });
+    } catch (error: any) {
+      logAuthNav("google_signin_error", { meta: { message: error.message } });
+      toast({
+        title: "خطأ",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex">
       {/* Left Side - Form */}
