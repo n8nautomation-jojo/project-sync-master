@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { newIdempotencyKey, isIdempotencyReplay } from "@/lib/idempotency";
 
 export interface InvoiceItem {
   id?: string;
