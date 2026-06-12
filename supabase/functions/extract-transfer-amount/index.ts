@@ -77,6 +77,33 @@ serve(async (req) => {
     }
   }
 
+  // === Per-user rate limit (real users only; service-role bypasses) ===
+  if (presented !== serviceKey) {
+    try {
+      const userClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: `Bearer ${presented}` } },
+      });
+      const { data: claims } = await userClient.auth.getClaims(presented);
+      const uid = claims?.claims?.sub as string | undefined;
+      if (uid) {
+        const admin = createClient(supabaseUrl, serviceKey);
+        const { data: allowed } = await admin.rpc(
+          'check_and_increment_ai_rate_limit',
+          { _user_id: uid, _endpoint: 'extract-transfer-amount', _limit: 20, _window_seconds: 60 },
+        );
+        if (allowed === false) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'تم تجاوز الحد المسموح. حاول بعد دقيقة.' }),
+            { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+          );
+        }
+      }
+    } catch (e) {
+      console.error('rate-limit check failed (allowing request):', e);
+    }
+  }
+
+
   try {
     const { imageUrl, imageBase64, transferId } = await req.json();
 
