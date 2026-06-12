@@ -14,7 +14,9 @@ export type AuthNavEvent =
   | "redirect_from_protected"
   | "auth_already_logged_in"
   | "signin_error"
-  | "signup_error";
+  | "signup_error"
+  | "google_signin_success"
+  | "google_signin_error";
 
 interface LogEntry {
   ts: string;
