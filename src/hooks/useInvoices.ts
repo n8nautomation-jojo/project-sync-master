@@ -107,8 +107,8 @@ export const useInvoices = () => {
       if (!orgId) throw new Error("لا توجد مؤسسة محددة");
       const totals = computeTotals(input);
       const idempotencyKey = newIdempotencyKey();
-      const { data: inv, error } = await supabase
-        .from("invoices")
+      const { data: inv, error } = await (supabase
+        .from("invoices") as any)
         .insert({
           organization_id: orgId,
           invoice_number: input.invoice_number,
@@ -136,8 +136,8 @@ export const useInvoices = () => {
       if (error) {
         if (isIdempotencyReplay(error)) {
           // Retry of the same submit — fetch the existing row and return it.
-          const { data: existing } = await supabase
-            .from("invoices")
+          const { data: existing } = await (supabase
+            .from("invoices") as any)
             .select()
             .eq("organization_id", orgId)
             .eq("idempotency_key", idempotencyKey)

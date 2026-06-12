@@ -130,7 +130,7 @@ export const useEmployees = () => {
       net_amount: number;
       notes?: string;
     }) => {
-      const { error } = await supabase.from('salary_payments').insert({
+      const { error } = await (supabase.from('salary_payments') as any).insert({
         organization_id: orgId!,
         paid_by: user?.id,
         status: 'paid',

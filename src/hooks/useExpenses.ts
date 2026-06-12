@@ -98,7 +98,7 @@ export const useExpenses = () => {
       is_recurring?: boolean;
       recurrence_type?: string;
     }) => {
-      const { error } = await supabase.from('expenses').insert({
+      const { error } = await (supabase.from('expenses') as any).insert({
         organization_id: orgId!,
         created_by: user?.id,
         idempotency_key: newIdempotencyKey(),
