@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { newIdempotencyKey, isIdempotencyReplay } from "@/lib/idempotency";
 
 export interface ExpenseCategory {
   id: string;
@@ -97,12 +98,13 @@ export const useExpenses = () => {
       is_recurring?: boolean;
       recurrence_type?: string;
     }) => {
-      const { error } = await supabase.from('expenses').insert({
+      const { error } = await (supabase.from('expenses') as any).insert({
         organization_id: orgId!,
         created_by: user?.id,
+        idempotency_key: newIdempotencyKey(),
         ...expense,
       });
-      if (error) throw error;
+      if (error && !isIdempotencyReplay(error)) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses', orgId] });
