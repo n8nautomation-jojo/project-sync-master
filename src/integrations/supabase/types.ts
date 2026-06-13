@@ -559,6 +559,65 @@ export type Database = {
         }
         Relationships: []
       }
+      ledger_entries: {
+        Row: {
+          account: string
+          amount: number
+          created_at: string
+          created_by: string | null
+          currency: string
+          entry_type: Database["public"]["Enums"]["ledger_entry_type"]
+          hash: string
+          id: string
+          metadata: Json
+          organization_id: string
+          posted_at: string
+          prev_hash: string | null
+          ref_id: string
+          ref_type: string
+        }
+        Insert: {
+          account: string
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          entry_type: Database["public"]["Enums"]["ledger_entry_type"]
+          hash: string
+          id?: string
+          metadata?: Json
+          organization_id: string
+          posted_at?: string
+          prev_hash?: string | null
+          ref_id: string
+          ref_type: string
+        }
+        Update: {
+          account?: string
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          entry_type?: Database["public"]["Enums"]["ledger_entry_type"]
+          hash?: string
+          id?: string
+          metadata?: Json
+          organization_id?: string
+          posted_at?: string
+          prev_hash?: string | null
+          ref_id?: string
+          ref_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ledger_entries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
@@ -1520,6 +1579,19 @@ export type Database = {
         Args: { _invoice_id: string; _method?: string; _reference?: string }
         Returns: boolean
       }
+      post_ledger_entry: {
+        Args: {
+          _account: string
+          _amount: number
+          _currency: string
+          _entry_type: Database["public"]["Enums"]["ledger_entry_type"]
+          _metadata?: Json
+          _organization_id: string
+          _ref_id: string
+          _ref_type: string
+        }
+        Returns: string
+      }
       soft_delete_all_transfers: {
         Args: { _organization_id: string }
         Returns: number
@@ -1530,9 +1602,17 @@ export type Database = {
         Args: { _organization_id: string; _user_id: string }
         Returns: boolean
       }
+      verify_ledger_chain: {
+        Args: { _organization_id: string }
+        Returns: {
+          broken_at_id: string
+          broken_at_posted_at: string
+        }[]
+      }
     }
     Enums: {
       app_role: "owner" | "admin" | "manager" | "viewer"
+      ledger_entry_type: "debit" | "credit"
       whatsapp_connection_status: "connected" | "pending" | "disconnected"
     }
     CompositeTypes: {
@@ -1662,6 +1742,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["owner", "admin", "manager", "viewer"],
+      ledger_entry_type: ["debit", "credit"],
       whatsapp_connection_status: ["connected", "pending", "disconnected"],
     },
   },
