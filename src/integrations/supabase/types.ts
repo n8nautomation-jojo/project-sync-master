@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_rate_limits: {
+        Row: {
+          endpoint: string
+          request_count: number
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          endpoint: string
+          request_count?: number
+          user_id: string
+          window_start: string
+        }
+        Update: {
+          endpoint?: string
+          request_count?: number
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -202,6 +223,7 @@ export type Database = {
           description: string | null
           expense_date: string
           id: string
+          idempotency_key: string | null
           is_deleted: boolean
           is_recurring: boolean
           notes: string | null
@@ -223,6 +245,7 @@ export type Database = {
           description?: string | null
           expense_date?: string
           id?: string
+          idempotency_key?: string | null
           is_deleted?: boolean
           is_recurring?: boolean
           notes?: string | null
@@ -244,6 +267,7 @@ export type Database = {
           description?: string | null
           expense_date?: string
           id?: string
+          idempotency_key?: string | null
           is_deleted?: boolean
           is_recurring?: boolean
           notes?: string | null
@@ -460,6 +484,7 @@ export type Database = {
           from_company: string
           from_email: string | null
           id: string
+          idempotency_key: string | null
           invoice_date: string
           invoice_number: string
           is_deleted: boolean
@@ -487,6 +512,7 @@ export type Database = {
           from_company: string
           from_email?: string | null
           id?: string
+          idempotency_key?: string | null
           invoice_date?: string
           invoice_number: string
           is_deleted?: boolean
@@ -514,6 +540,7 @@ export type Database = {
           from_company?: string
           from_email?: string | null
           id?: string
+          idempotency_key?: string | null
           invoice_date?: string
           invoice_number?: string
           is_deleted?: boolean
@@ -840,6 +867,7 @@ export type Database = {
           deductions: number
           employee_id: string
           id: string
+          idempotency_key: string | null
           month: number
           net_amount: number
           notes: string | null
@@ -857,6 +885,7 @@ export type Database = {
           deductions?: number
           employee_id: string
           id?: string
+          idempotency_key?: string | null
           month: number
           net_amount: number
           notes?: string | null
@@ -874,6 +903,7 @@ export type Database = {
           deductions?: number
           employee_id?: string
           id?: string
+          idempotency_key?: string | null
           month?: number
           net_amount?: number
           notes?: string | null
@@ -1406,6 +1436,15 @@ export type Database = {
     Functions: {
       can_add_branch: { Args: { _organization_id: string }; Returns: boolean }
       can_add_user: { Args: { _organization_id: string }; Returns: boolean }
+      check_and_increment_ai_rate_limit: {
+        Args: {
+          _endpoint: string
+          _limit: number
+          _user_id: string
+          _window_seconds?: number
+        }
+        Returns: boolean
+      }
       create_organization_with_owner: {
         Args: { _name: string; _slug: string }
         Returns: {
