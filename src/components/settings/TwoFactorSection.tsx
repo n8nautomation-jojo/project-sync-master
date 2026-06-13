@@ -25,11 +25,11 @@ export function TwoFactorSection() {
     const { data, error } = await supabase.auth.mfa.listFactors();
     setLoading(false);
     if (error) return;
-    const totp = data?.totp ?? [];
-    const verified = totp.find((f) => f.status === "verified") as Factor | undefined;
+    const totp = (data?.totp ?? []) as Factor[];
+    const verified = totp.find((f) => f.status === "verified");
     setVerifiedFactor(verified ?? null);
     // Cleanup stale unverified factors silently
-    const stale = totp.filter((f) => f.status === "unverified");
+    const stale = totp.filter((f) => f.status !== "verified");
     for (const f of stale) {
       await supabase.auth.mfa.unenroll({ factorId: f.id });
     }
