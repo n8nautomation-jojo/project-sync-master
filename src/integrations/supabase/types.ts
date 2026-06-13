@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_rate_limits: {
+        Row: {
+          endpoint: string
+          request_count: number
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          endpoint: string
+          request_count?: number
+          user_id: string
+          window_start: string
+        }
+        Update: {
+          endpoint?: string
+          request_count?: number
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -202,6 +223,7 @@ export type Database = {
           description: string | null
           expense_date: string
           id: string
+          idempotency_key: string | null
           is_deleted: boolean
           is_recurring: boolean
           notes: string | null
@@ -223,6 +245,7 @@ export type Database = {
           description?: string | null
           expense_date?: string
           id?: string
+          idempotency_key?: string | null
           is_deleted?: boolean
           is_recurring?: boolean
           notes?: string | null
@@ -244,6 +267,7 @@ export type Database = {
           description?: string | null
           expense_date?: string
           id?: string
+          idempotency_key?: string | null
           is_deleted?: boolean
           is_recurring?: boolean
           notes?: string | null
@@ -460,6 +484,7 @@ export type Database = {
           from_company: string
           from_email: string | null
           id: string
+          idempotency_key: string | null
           invoice_date: string
           invoice_number: string
           is_deleted: boolean
@@ -487,6 +512,7 @@ export type Database = {
           from_company: string
           from_email?: string | null
           id?: string
+          idempotency_key?: string | null
           invoice_date?: string
           invoice_number: string
           is_deleted?: boolean
@@ -514,6 +540,7 @@ export type Database = {
           from_company?: string
           from_email?: string | null
           id?: string
+          idempotency_key?: string | null
           invoice_date?: string
           invoice_number?: string
           is_deleted?: boolean
@@ -531,6 +558,65 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      ledger_entries: {
+        Row: {
+          account: string
+          amount: number
+          created_at: string
+          created_by: string | null
+          currency: string
+          entry_type: Database["public"]["Enums"]["ledger_entry_type"]
+          hash: string
+          id: string
+          metadata: Json
+          organization_id: string
+          posted_at: string
+          prev_hash: string | null
+          ref_id: string
+          ref_type: string
+        }
+        Insert: {
+          account: string
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          entry_type: Database["public"]["Enums"]["ledger_entry_type"]
+          hash: string
+          id?: string
+          metadata?: Json
+          organization_id: string
+          posted_at?: string
+          prev_hash?: string | null
+          ref_id: string
+          ref_type: string
+        }
+        Update: {
+          account?: string
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          entry_type?: Database["public"]["Enums"]["ledger_entry_type"]
+          hash?: string
+          id?: string
+          metadata?: Json
+          organization_id?: string
+          posted_at?: string
+          prev_hash?: string | null
+          ref_id?: string
+          ref_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ledger_entries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -840,6 +926,7 @@ export type Database = {
           deductions: number
           employee_id: string
           id: string
+          idempotency_key: string | null
           month: number
           net_amount: number
           notes: string | null
@@ -857,6 +944,7 @@ export type Database = {
           deductions?: number
           employee_id: string
           id?: string
+          idempotency_key?: string | null
           month: number
           net_amount: number
           notes?: string | null
@@ -874,6 +962,7 @@ export type Database = {
           deductions?: number
           employee_id?: string
           id?: string
+          idempotency_key?: string | null
           month?: number
           net_amount?: number
           notes?: string | null
@@ -1406,6 +1495,15 @@ export type Database = {
     Functions: {
       can_add_branch: { Args: { _organization_id: string }; Returns: boolean }
       can_add_user: { Args: { _organization_id: string }; Returns: boolean }
+      check_and_increment_ai_rate_limit: {
+        Args: {
+          _endpoint: string
+          _limit: number
+          _user_id: string
+          _window_seconds?: number
+        }
+        Returns: boolean
+      }
       create_organization_with_owner: {
         Args: { _name: string; _slug: string }
         Returns: {
@@ -1481,6 +1579,19 @@ export type Database = {
         Args: { _invoice_id: string; _method?: string; _reference?: string }
         Returns: boolean
       }
+      post_ledger_entry: {
+        Args: {
+          _account: string
+          _amount: number
+          _currency: string
+          _entry_type: Database["public"]["Enums"]["ledger_entry_type"]
+          _metadata?: Json
+          _organization_id: string
+          _ref_id: string
+          _ref_type: string
+        }
+        Returns: string
+      }
       soft_delete_all_transfers: {
         Args: { _organization_id: string }
         Returns: number
@@ -1491,9 +1602,17 @@ export type Database = {
         Args: { _organization_id: string; _user_id: string }
         Returns: boolean
       }
+      verify_ledger_chain: {
+        Args: { _organization_id: string }
+        Returns: {
+          broken_at_id: string
+          broken_at_posted_at: string
+        }[]
+      }
     }
     Enums: {
       app_role: "owner" | "admin" | "manager" | "viewer"
+      ledger_entry_type: "debit" | "credit"
       whatsapp_connection_status: "connected" | "pending" | "disconnected"
     }
     CompositeTypes: {
@@ -1623,6 +1742,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["owner", "admin", "manager", "viewer"],
+      ledger_entry_type: ["debit", "credit"],
       whatsapp_connection_status: ["connected", "pending", "disconnected"],
     },
   },
