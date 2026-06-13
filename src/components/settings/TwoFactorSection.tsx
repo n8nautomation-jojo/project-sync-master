@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { KeyRound, Loader2, ShieldCheck, ShieldAlert } from "lucide-react";
 
-type Factor = { id: string; status: "verified" | "unverified"; friendly_name?: string };
+type Factor = { id: string; status: string; friendly_name?: string };
 
 export function TwoFactorSection() {
   const { toast } = useToast();
