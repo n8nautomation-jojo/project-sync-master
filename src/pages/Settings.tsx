@@ -163,7 +163,9 @@ export default function Settings() {
                 تغيير كلمة المرور
               </Button>
             </div>
-          </div>
+          {/* Two-Factor Authentication */}
+          <TwoFactorSection />
+        </div>
         </div>
 
         {/* Sidebar Settings */}
