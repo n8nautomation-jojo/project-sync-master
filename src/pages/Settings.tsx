@@ -21,6 +21,7 @@ import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { LoginHistorySection } from "@/components/settings/LoginHistorySection";
+import { TwoFactorSection } from "@/components/settings/TwoFactorSection";
 
 export default function Settings() {
   const { profile, currentOrganization } = useAuth();
@@ -163,6 +164,9 @@ export default function Settings() {
               </Button>
             </div>
           </div>
+
+          {/* Two-Factor Authentication */}
+          <TwoFactorSection />
         </div>
 
         {/* Sidebar Settings */}
