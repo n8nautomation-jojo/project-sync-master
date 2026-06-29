@@ -12,9 +12,16 @@ import { logAuthNav } from "@/lib/authNavLogger";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 
+// SECURITY: Strong password policy for a financial system
+const passwordSchema = z
+  .string()
+  .min(8, { message: "كلمة المرور يجب أن تكون 8 أحرف على الأقل" })
+  .regex(/[A-Z]/, { message: "يجب أن تحتوي على حرف كبير واحد على الأقل" })
+  .regex(/[0-9]/, { message: "يجب أن تحتوي على رقم واحد على الأقل" });
+
 const loginSchema = z.object({
   email: z.string().email({ message: "البريد الإلكتروني غير صالح" }),
-  password: z.string().min(6, { message: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" }),
+  password: passwordSchema,
 });
 
 const signupSchema = loginSchema.extend({
@@ -35,6 +42,12 @@ export default function Auth() {
   const [isLogin, setIsLogin] = useState(initialMode !== 'signup');
   const [showPassword, setShowPassword] = useState(false);
   const [mfaState, setMfaState] = useState<{ required: boolean; factorId: string; code: string } | null>(null);
+
+  // SECURITY: Client-side brute force protection
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const [lockoutUntil, setLockoutUntil] = useState<number | null>(null);
+  const MAX_ATTEMPTS = 5;
+  const LOCKOUT_DURATION_MS = 5 * 60 * 1000; // 5 minutes
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -100,6 +113,17 @@ export default function Auth() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // SECURITY: Check lockout
+    if (lockoutUntil && Date.now() < lockoutUntil) {
+      const remaining = Math.ceil((lockoutUntil - Date.now()) / 60000);
+      toast({
+        title: "الحساب مقفل مؤقتاً",
+        description: \`محاولات كثيرة. انتظر \${remaining} دقيقة قبل المحاولة مجدداً.\`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!validateForm()) return;
     
     setIsLoading(true);
@@ -110,11 +134,24 @@ export default function Auth() {
         if (result.error) {
           logAuthNav("signin_error", { meta: { message: result.error.message } });
           if (result.error.message.includes('Invalid login credentials')) {
-            toast({
-              title: "خطأ في تسجيل الدخول",
-              description: "البريد الإلكتروني أو كلمة المرور غير صحيحة",
-              variant: "destructive",
-            });
+            // SECURITY: Track failed attempts
+            const attempts = loginAttempts + 1;
+            setLoginAttempts(attempts);
+            if (attempts >= MAX_ATTEMPTS) {
+              setLockoutUntil(Date.now() + LOCKOUT_DURATION_MS);
+              setLoginAttempts(0);
+              toast({
+                title: "الحساب مقفل مؤقتاً",
+                description: "5 محاولات فاشلة. سيتم فتح الحساب بعد 5 دقائق.",
+                variant: "destructive",
+              });
+            } else {
+              toast({
+                title: "خطأ في تسجيل الدخول",
+                description: \`البريد الإلكتروني أو كلمة المرور غير صحيحة. المحاولة \${attempts}/\${MAX_ATTEMPTS}\`,
+                variant: "destructive",
+              });
+            }
           } else {
             toast({
               title: "خطأ",

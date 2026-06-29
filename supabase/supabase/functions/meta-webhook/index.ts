@@ -25,7 +25,7 @@ function isValidMsgId(id: string): boolean {
 
 async function verifySignature(raw: string, sig: string | null, secret: string): Promise<boolean> {
   if (!sig) return false;
-  if (!secret) return true;
+  if (!secret) return false; // SECURITY: never bypass signature check
   try {
     const [algo, hash] = sig.split("=");
     if (algo !== "sha256") return false;

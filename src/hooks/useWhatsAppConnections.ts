@@ -40,7 +40,7 @@ export const useWhatsAppConnections = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('whatsapp_connections')
-        .select('*, branches(*), whatsapp_credentials(*)')
+        .select(\`*, branches(*), whatsapp_credentials(id, connection_id, phone_number, created_at)\`)
         .eq('organization_id', orgId!)
         .order('created_at', { ascending: false });
       

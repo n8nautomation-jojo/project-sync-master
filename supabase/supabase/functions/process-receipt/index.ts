@@ -1,15 +1,34 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// SECURITY: Restrict CORS to known origins only
+const ALLOWED_ORIGINS = [
+  "https://hesabaty-sd.netlify.app",
+  "https://hesapaty.lovable.app",
+  "http://localhost:5173",
+];
+
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  const allowed = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+    "Vary": "Origin",
+  };
+}
 
 const MAX_CONCURRENT = 5;
 const AI_RATE_LIMIT_DELAY = 500;
 
 // ============ HELPERS ============
+// SECURITY: Limit image size to prevent AI credit abuse
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+
+function validateImageSize(buffer: Uint8Array): boolean {
+  return buffer.length <= MAX_IMAGE_SIZE_BYTES;
+}
+
 function validateAndParseAmount(amount: any): number {
   if (amount === null || amount === undefined) return 0;
   const parsed = parseFloat(String(amount));
@@ -442,6 +461,8 @@ async function processMessage(sb: any, msg: any): Promise<{ status: string; mess
 
 // ============ MAIN: BATCH PROCESSOR ============
 serve(async (req) => {
+  const _origin = req.headers.get("origin");
+  const corsHeaders = getCorsHeaders(_origin);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   const sb = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
