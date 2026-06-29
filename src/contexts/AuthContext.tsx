@@ -239,8 +239,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (data.user) {
       logLoginEvent(data.user.id, 'login', true);
     }
+
+    // MFA Challenge: if user has a verified TOTP factor, require aal2
+    const { data: mfaData } = await supabase.auth.mfa.listFactors();
+    const verifiedFactor = mfaData?.totp?.find((f) => f.status === 'verified');
+    if (verifiedFactor) {
+      const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (assurance?.currentLevel !== 'aal2') {
+        return { error: null, mfaRequired: true, factorId: verifiedFactor.id };
+      }
+    }
     
-    return { error: null };
+    return { error: null, mfaRequired: false };
   };
 
   const signOut = async () => {

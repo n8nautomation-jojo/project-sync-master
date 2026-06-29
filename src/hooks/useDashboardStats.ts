@@ -117,29 +117,41 @@ export function useDashboardStats(filters?: DashboardFilters) {
       
       if (branchesError) throw branchesError;
       
-      // Build transfers query with organization filter
-      let transfersQuery = supabase
+      // Build transfers queries — run in parallel for performance
+      let allTransfersQuery = supabase
         .from("transfers")
         .select("amount, is_confirmed, created_at, branch_id")
         .eq("organization_id", currentOrganization.id);
-      
+
       if (effectiveBranchId !== "all") {
-        transfersQuery = transfersQuery.eq("branch_id", effectiveBranchId);
+        allTransfersQuery = allTransfersQuery.eq("branch_id", effectiveBranchId);
       }
-      
-      const { data: allTransfers, error: allTransfersError } = await transfersQuery;
-      
+
+      // Server-side period filtering — avoids loading all rows into JS memory
+      let periodQuery = supabase
+        .from("transfers")
+        .select("amount, is_confirmed, created_at, branch_id")
+        .eq("organization_id", currentOrganization.id);
+
+      if (effectiveBranchId !== "all") {
+        periodQuery = periodQuery.eq("branch_id", effectiveBranchId);
+      }
+      if (periodStart) {
+        periodQuery = periodQuery.gte("created_at", periodStart.toISOString());
+      }
+      if (periodEnd) {
+        periodQuery = periodQuery.lte("created_at", periodEnd.toISOString());
+      }
+
+      const [
+        { data: allTransfers, error: allTransfersError },
+        { data: periodTransfersData, error: periodTransfersError },
+      ] = await Promise.all([allTransfersQuery, periodQuery]);
+
       if (allTransfersError) throw allTransfersError;
-      
-      // Filter by time period
-      const periodTransfers = periodStart
-        ? (allTransfers?.filter(t => {
-            const d = new Date(t.created_at);
-            if (d < periodStart) return false;
-            if (periodEnd && d > periodEnd) return false;
-            return true;
-          }) || [])
-        : allTransfers || [];
+      if (periodTransfersError) throw periodTransfersError;
+
+      const periodTransfers = periodTransfersData || [];
       
       const activeBranches = branches?.filter(b => b.is_active).length || 0;
       const totalBranches = branches?.length || 0;

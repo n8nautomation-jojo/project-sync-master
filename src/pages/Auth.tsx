@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import logo from "@/assets/logo.png";
 import { logAuthNav } from "@/lib/authNavLogger";
+import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 
 const loginSchema = z.object({
@@ -33,6 +34,7 @@ export default function Auth() {
   const initialMode = new URLSearchParams(location.search).get('mode');
   const [isLogin, setIsLogin] = useState(initialMode !== 'signup');
   const [showPassword, setShowPassword] = useState(false);
+  const [mfaState, setMfaState] = useState<{ required: boolean; factorId: string; code: string } | null>(null);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -104,10 +106,10 @@ export default function Auth() {
 
     try {
       if (isLogin) {
-        const { error } = await signIn(formData.email, formData.password);
-        if (error) {
-          logAuthNav("signin_error", { meta: { message: error.message } });
-          if (error.message.includes('Invalid login credentials')) {
+        const result = await signIn(formData.email, formData.password);
+        if (result.error) {
+          logAuthNav("signin_error", { meta: { message: result.error.message } });
+          if (result.error.message.includes('Invalid login credentials')) {
             toast({
               title: "خطأ في تسجيل الدخول",
               description: "البريد الإلكتروني أو كلمة المرور غير صحيحة",
@@ -116,10 +118,14 @@ export default function Auth() {
           } else {
             toast({
               title: "خطأ",
-              description: error.message,
+              description: result.error.message,
               variant: "destructive",
             });
           }
+        } else if ((result as any).mfaRequired) {
+          // User has 2FA — show challenge screen
+          setMfaState({ required: true, factorId: (result as any).factorId, code: '' });
+          logAuthNav("signin_mfa_required", { meta: { email: formData.email } });
         } else {
           logAuthNav("signin_success", { meta: { email: formData.email } });
           toast({
@@ -206,6 +212,57 @@ export default function Auth() {
       setIsLoading(false);
     }
   };
+
+  // MFA Challenge Screen
+  if (mfaState?.required) {
+    const handleMfaVerify = async () => {
+      setIsLoading(true);
+      try {
+        const { data: challengeData, error: chalErr } = await supabase.auth.mfa.challenge({ factorId: mfaState.factorId });
+        if (chalErr) throw chalErr;
+        const { error: verifyErr } = await supabase.auth.mfa.verify({
+          factorId: mfaState.factorId,
+          challengeId: challengeData.id,
+          code: mfaState.code,
+        });
+        if (verifyErr) {
+          toast({ title: "رمز غير صحيح", description: "تحقق من رمز المصادقة وأعد المحاولة", variant: "destructive" });
+        } else {
+          setMfaState(null);
+          toast({ title: "تم تسجيل الدخول بنجاح", description: "مرحباً بك" });
+        }
+      } catch (e: any) {
+        toast({ title: "خطأ", description: e.message, variant: "destructive" });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-8">
+        <div className="w-full max-w-md space-y-6 text-center">
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold">التحقق بخطوتين</h2>
+            <p className="text-muted-foreground">أدخل الرمز المكوّن من 6 أرقام من تطبيق المصادقة</p>
+          </div>
+          <Input
+            type="text"
+            inputMode="numeric"
+            maxLength={6}
+            placeholder="000000"
+            className="text-center text-2xl tracking-widest"
+            value={mfaState.code}
+            onChange={(e) => setMfaState({ ...mfaState, code: e.target.value })}
+            onKeyDown={(e) => e.key === 'Enter' && handleMfaVerify()}
+          />
+          <Button className="w-full" onClick={handleMfaVerify} disabled={isLoading || mfaState.code.length !== 6}>
+            {isLoading ? "جاري التحقق..." : "تأكيد"}
+          </Button>
+          <Button variant="ghost" onClick={() => setMfaState(null)}>العودة لتسجيل الدخول</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex">
