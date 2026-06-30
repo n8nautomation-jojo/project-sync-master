@@ -118,7 +118,7 @@ export default function Auth() {
       const remaining = Math.ceil((lockoutUntil - Date.now()) / 60000);
       toast({
         title: "الحساب مقفل مؤقتاً",
-        description: \`محاولات كثيرة. انتظر \${remaining} دقيقة قبل المحاولة مجدداً.\`,
+        description: `محاولات كثيرة. انتظر ${remaining} دقيقة قبل المحاولة مجدداً.`,
         variant: "destructive",
       });
       return;
@@ -148,7 +148,7 @@ export default function Auth() {
             } else {
               toast({
                 title: "خطأ في تسجيل الدخول",
-                description: \`البريد الإلكتروني أو كلمة المرور غير صحيحة. المحاولة \${attempts}/\${MAX_ATTEMPTS}\`,
+                description: `البريد الإلكتروني أو كلمة المرور غير صحيحة. المحاولة ${attempts}/${MAX_ATTEMPTS}`,
                 variant: "destructive",
               });
             }
