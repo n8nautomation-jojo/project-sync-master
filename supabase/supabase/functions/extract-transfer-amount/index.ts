@@ -25,6 +25,37 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // SECURITY: Verify caller is an authenticated Hisabaty user
+  // This prevents unauthenticated abuse of AI credits
+  try {
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'غير مصرح' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const { createClient: _createClient } = await import('https://esm.sh/@supabase/supabase-js@2.49.1');
+    const authClient = _createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user }, error: authError } = await authClient.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'غير مصرح — جلسة منتهية أو غير صالحة' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+  } catch (authCheckError) {
+    console.error('Auth check failed:', authCheckError);
+    return new Response(
+      JSON.stringify({ success: false, error: 'خطأ في التحقق من الهوية' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
   try {
     const { imageUrl, imageBase64, transferId } = await req.json();
 

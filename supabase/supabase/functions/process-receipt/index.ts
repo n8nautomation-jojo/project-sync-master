@@ -29,6 +29,19 @@ function validateImageSize(buffer: Uint8Array): boolean {
   return buffer.length <= MAX_IMAGE_SIZE_BYTES;
 }
 
+// SECURITY: Whitelist of allowed MIME types — images only
+// Magic bytes are checked by detectMimeType() before this runs
+const ALLOWED_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+]);
+
+function validateMimeType(mimeType: string): boolean {
+  return ALLOWED_MIME_TYPES.has(mimeType);
+}
+
 function validateAndParseAmount(amount: any): number {
   if (amount === null || amount === undefined) return 0;
   const parsed = parseFloat(String(amount));
@@ -185,13 +198,47 @@ async function detectFraud(
 }
 
 // ============ IMAGE DOWNLOAD ============
+
+// SECURITY: Whitelist of allowed external domains for image download.
+// Only add domains you explicitly trust. This prevents SSRF attacks.
+const ALLOWED_IMAGE_DOMAINS = [
+  // Meta / WhatsApp Business API CDN
+  "lookaside.fbsbx.com",
+  "scontent.whatsapp.net",
+  "mmg.whatsapp.net",
+  "media.fbcdn.net",
+  // Green API CDN
+  "sw-media.itr.su",
+  "sw-media.green-api.com",
+  "media.green-api.com",
+  // Supabase Storage (own project)
+  // Note: storage: prefix is handled separately, not via HTTP fetch
+];
+
+function isAllowedImageUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    // Only allow HTTPS
+    if (parsed.protocol !== "https:") return false;
+    // Check against whitelist (exact match or subdomain match)
+    return ALLOWED_IMAGE_DOMAINS.some(
+      (domain) => parsed.hostname === domain || parsed.hostname.endsWith("." + domain)
+    );
+  } catch {
+    return false;
+  }
+}
+
 async function downloadImage(mediaUrl: string, accessToken?: string): Promise<{ buffer: Uint8Array; mimeType: string } | null> {
   try {
     let downloadUrl = mediaUrl;
+
+    // Handle Meta media ID prefix
     if (mediaUrl.startsWith("meta:")) {
       const mediaId = mediaUrl.slice(5);
       if (!mediaId || !/^[a-zA-Z0-9]+$/.test(mediaId)) return null;
       if (!accessToken) return null;
+      // graph.facebook.com is a fixed known endpoint — not user-supplied
       const metaResp = await fetch(`https://graph.facebook.com/v18.0/${mediaId}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
@@ -199,9 +246,18 @@ async function downloadImage(mediaUrl: string, accessToken?: string): Promise<{ 
       const metaData = await metaResp.json();
       downloadUrl = metaData.url;
       if (!downloadUrl) return null;
+      // Meta CDN URLs must also be whitelisted
+      if (!isAllowedImageUrl(downloadUrl)) {
+        console.error("SSRF_BLOCKED: Meta returned non-whitelisted URL:", downloadUrl);
+        return null;
+      }
+    } else {
+      // SECURITY: Reject any direct URL not in whitelist
+      if (!isAllowedImageUrl(downloadUrl)) {
+        console.error("SSRF_BLOCKED: URL not in whitelist:", downloadUrl);
+        return null;
+      }
     }
-
-    try { new URL(downloadUrl); } catch { return null; }
 
     const headers: Record<string, string> = {};
     if (mediaUrl.startsWith("meta:") && accessToken) {
@@ -317,6 +373,15 @@ async function processMessage(sb: any, msg: any): Promise<{ status: string; mess
         next_retry_at: new Date(Date.now() + 30000).toISOString(),
       });
       return { status: "download_failed", messageId };
+    }
+
+    // SECURITY: Reject non-image file types (checked via magic bytes, not extension)
+    if (!validateMimeType(imageData.mimeType)) {
+      console.warn(`BLOCKED: Invalid file type "${imageData.mimeType}" for message ${messageId}`);
+      await sb.from("whatsapp_messages")
+        .update({ processed: true, processed_at: new Date().toISOString() })
+        .eq("id", msg.id);
+      return { status: "invalid_file_type", messageId };
     }
 
     // Compute hash & check duplicates
