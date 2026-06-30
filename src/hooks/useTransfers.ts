@@ -18,12 +18,12 @@ export type Transfer = Tables<"transfers"> & {
 
 const PAGE_SIZE = 50;
 
-export function useTransfers(page: number = 0) {
+export function useTransfers(page: number = 0, searchQuery: string = "") {
   const { currentOrganization } = useAuth();
   const { restrictedBranchId } = useBranchAccess();
   
   return useQuery({
-    queryKey: ["transfers", currentOrganization?.id, restrictedBranchId, page],
+    queryKey: ["transfers", currentOrganization?.id, restrictedBranchId, page, searchQuery],
     queryFn: async () => {
       if (!currentOrganization?.id) return { data: [], count: 0 };
       
@@ -39,6 +39,16 @@ export function useTransfers(page: number = 0) {
       
       if (restrictedBranchId) {
         query = query.eq("branch_id", restrictedBranchId);
+      }
+
+      // SERVER-SIDE SEARCH: search across the whole dataset, not just current page
+      const trimmed = searchQuery.trim();
+      if (trimmed) {
+        // Escape special PostgREST characters to avoid breaking the filter
+        const safe = trimmed.replace(/[%,]/g, "");
+        query = query.or(
+          `sender_name.ilike.%${safe}%,transaction_id.ilike.%${safe}%,client_memo.ilike.%${safe}%,receiver_account.ilike.%${safe}%`
+        );
       }
 
       const { data, error, count } = await query;
@@ -86,9 +96,22 @@ export function useTransferStats() {
   });
 }
 
-export function useTransfersPagination() {
+export function useTransfersPagination(searchQuery: string = "") {
   const [page, setPage] = useState(0);
-  const query = useTransfers(page);
+  const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
+
+  // Debounce search input to avoid a query on every keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 350);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Reset to first page whenever the search term changes
+  useEffect(() => {
+    setPage(0);
+  }, [debouncedSearch]);
+
+  const query = useTransfers(page, debouncedSearch);
   const statsQuery = useTransferStats();
   const queryClient = useQueryClient();
   const { currentOrganization } = useAuth();

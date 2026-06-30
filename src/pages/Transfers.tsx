@@ -206,7 +206,7 @@ export default function Transfers() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { getSecureImageUrl, loading: secureImageLoading } = useSecureImage();
   
-  const { transfers, isLoading, error, totalCount, stats, page, setPage, totalPages, hasNextPage, hasPrevPage } = useTransfersPagination();
+  const { transfers, isLoading, error, totalCount, stats, page, setPage, totalPages, hasNextPage, hasPrevPage } = useTransfersPagination(searchQuery);
   const { branches } = useBranches();
   const confirmMutation = useConfirmTransfer();
   const rejectMutation = useRejectTransfer();
@@ -215,6 +215,8 @@ export default function Transfers() {
   const resetAllMutation = useResetAllTransfers();
   const updateMutation = useUpdateTransfer();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [resetConfirmText, setResetConfirmText] = useState("");
+  const RESET_CONFIRM_WORD = "حذف";
   const isMobile = useIsMobile();
   const [hintDismissed, setHintDismissed] = useState(() => {
     if (typeof window === "undefined") return true;
@@ -230,19 +232,9 @@ export default function Transfers() {
   }, [isMobile, hintDismissed]);
 
   const filteredTransfers = transfers.filter((transfer) => {
-    const branchName = transfer.branches?.name || "";
-    const matchesSearch =
-      branchName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      transfer.sender_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      transfer.transaction_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      transfer.client_memo?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      transfer.receiver_account?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      transfer.id.toLowerCase().includes(searchQuery.toLowerCase());
-    
     const transferStatus = transfer.is_confirmed ? "confirmed" : (transfer.needs_review || !transfer.client_memo ? "pending" : "unconfirmed");
     const matchesStatus = statusFilter === "all" || transferStatus === statusFilter;
-    
-    return matchesSearch && matchesStatus;
+    return matchesStatus;
   });
 
   const handleConfirm = (transfer: Transfer) => {
@@ -389,16 +381,20 @@ export default function Transfers() {
               placeholder="بحث بالاسم، رقم العملية، البيان..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pr-10 bg-muted/50 border-0"
+              className="pr-10 pl-9 bg-muted/50 border-0"
             />
+            {isLoading && searchQuery && (
+              <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground animate-spin" />
+            )}
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => { setStatusFilter("all"); setSearchQuery(""); }}>
               <RotateCcw className="w-3.5 h-3.5" />
               إعادة تعيين
             </Button>
+            <div className="w-px h-5 bg-border mx-1" />
             <Button 
-              variant="destructive" size="sm" className="gap-1.5 text-xs"
+              variant="outline" size="sm" className="gap-1.5 text-xs text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
               onClick={() => setShowResetConfirm(true)}
               disabled={resetAllMutation.isPending || stats.total === 0}
             >
@@ -605,7 +601,7 @@ export default function Transfers() {
       </AlertDialog>
 
       {/* Reset All Dialog */}
-      <AlertDialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
+      <AlertDialog open={showResetConfirm} onOpenChange={(open) => { setShowResetConfirm(open); if (!open) setResetConfirmText(""); }}>
         <AlertDialogContent dir="rtl">
           <AlertDialogHeader>
             <AlertDialogTitle>⚠️ هل تريد حذف جميع التحويلات؟</AlertDialogTitle>
@@ -613,13 +609,26 @@ export default function Transfers() {
               سيتم حذف جميع التحويلات ({stats.total} عملية). هذا الإجراء لا يمكن التراجع عنه.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="space-y-2">
+            <Label className="text-sm text-muted-foreground">
+              للتأكيد، اكتب كلمة <span className="font-bold text-destructive">"{RESET_CONFIRM_WORD}"</span> في الحقل أدناه:
+            </Label>
+            <Input
+              value={resetConfirmText}
+              onChange={(e) => setResetConfirmText(e.target.value)}
+              placeholder={RESET_CONFIRM_WORD}
+              className="text-center"
+              autoFocus
+            />
+          </div>
           <AlertDialogFooter className="gap-2">
             <AlertDialogCancel>إلغاء</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => { resetAllMutation.mutate(); setShowResetConfirm(false); }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => { resetAllMutation.mutate(); setShowResetConfirm(false); setResetConfirmText(""); }}
+              disabled={resetConfirmText !== RESET_CONFIRM_WORD}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              حذف الكل
+              حذف الكل نهائياً
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

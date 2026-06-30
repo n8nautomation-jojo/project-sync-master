@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -38,12 +39,13 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Landing />} />
@@ -129,6 +131,7 @@ const App = () => (
       </AuthProvider>
     </ThemeProvider>
   </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
