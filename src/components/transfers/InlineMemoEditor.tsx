@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Check, X, Pencil, Info } from "lucide-react";
+import { Check, X, Pencil, Info, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface InlineMemoEditorProps {
@@ -7,6 +7,7 @@ interface InlineMemoEditorProps {
   originalValue?: string | null;  // النص الأصلي المستخرج (OCR)
   onSave: (value: string) => void;
   isPending?: boolean;
+  isError?: boolean;
   placeholder?: string;
 }
 
@@ -14,12 +15,15 @@ export function InlineMemoEditor({
   value, 
   originalValue, 
   onSave, 
-  isPending, 
+  isPending,
+  isError,
   placeholder = "⏳ بانتظار البيان..." 
 }: InlineMemoEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value || "");
+  const [justSaved, setJustSaved] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const wasPending = useRef(false);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -27,6 +31,20 @@ export function InlineMemoEditor({
       inputRef.current.select();
     }
   }, [isEditing]);
+
+  // SAVE FEEDBACK: detect transition from pending → not pending (save completed)
+  useEffect(() => {
+    if (isPending) {
+      wasPending.current = true;
+    } else if (wasPending.current && !isError) {
+      wasPending.current = false;
+      setJustSaved(true);
+      const timer = setTimeout(() => setJustSaved(false), 1800);
+      return () => clearTimeout(timer);
+    } else if (wasPending.current && isError) {
+      wasPending.current = false;
+    }
+  }, [isPending, isError]);
 
   const handleSave = () => {
     const trimmed = editValue.trim();
@@ -82,7 +100,9 @@ export function InlineMemoEditor({
     <div
       className={cn(
         "group flex flex-col gap-0.5 cursor-pointer rounded-md px-2 py-1.5 -mx-2 transition-all hover:bg-accent/50 min-w-[180px]",
-        !value && "bg-amber-50/50 border border-dashed border-amber-200 text-amber-600 italic"
+        !value && "bg-amber-50/50 border border-dashed border-amber-200 text-amber-600 italic",
+        justSaved && "bg-emerald-50 border border-emerald-200",
+        isError && "bg-red-50 border border-red-200"
       )}
       onClick={() => {
         setEditValue(value || "");
@@ -95,7 +115,20 @@ export function InlineMemoEditor({
         <span className="text-sm font-medium leading-snug">
           {value || placeholder}
         </span>
-        <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-40 transition-opacity flex-shrink-0 text-primary" />
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {isPending && (
+            <div className="w-3 h-3 border-2 border-primary/30 border-t-primary rounded-full animate-spin" title="جاري الحفظ..." />
+          )}
+          {justSaved && !isPending && (
+            <Check className="w-3.5 h-3.5 text-emerald-600 animate-in zoom-in duration-200" />
+          )}
+          {isError && !isPending && (
+            <AlertCircle className="w-3.5 h-3.5 text-red-500" title="فشل الحفظ — اضغط للمحاولة مجدداً" />
+          )}
+          {!isPending && !justSaved && !isError && (
+            <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-40 transition-opacity text-primary" />
+          )}
+        </div>
       </div>
       
       {originalValue && originalValue !== value && (

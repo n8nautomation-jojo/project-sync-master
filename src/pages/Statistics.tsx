@@ -45,22 +45,56 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { format, subDays, startOfDay } from "date-fns";
 import { ar } from "date-fns/locale";
+import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Calendar } from "lucide-react";
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--secondary))", "hsl(var(--accent))", "#10b981", "#f59e0b", "#ef4444"];
+
+type StatsPeriod = "7d" | "30d" | "90d" | "all";
+
+const PERIOD_LABELS: Record<StatsPeriod, string> = {
+  "7d": "آخر 7 أيام",
+  "30d": "آخر 30 يوماً",
+  "90d": "آخر 90 يوماً",
+  "all": "كل الفترات",
+};
+
+function getPeriodStartDate(period: StatsPeriod): Date | null {
+  const now = new Date();
+  switch (period) {
+    case "7d": return startOfDay(subDays(now, 6));
+    case "30d": return startOfDay(subDays(now, 29));
+    case "90d": return startOfDay(subDays(now, 89));
+    case "all": return null;
+  }
+}
 
 export default function Statistics() {
   const { currentOrganization } = useAuth();
   const organizationId = currentOrganization?.id;
   const { branches } = useBranches();
+  const [period, setPeriod] = useState<StatsPeriod>("30d");
+  const periodStart = getPeriodStartDate(period);
 
   const { data: messagesStats, isLoading: loadingMessages } = useQuery({
-    queryKey: ["messages-stats", organizationId],
+    queryKey: ["messages-stats", organizationId, period],
     queryFn: async () => {
       if (!organizationId) return [];
-      const { data, error } = await supabase
+      let query = supabase
         .from("whatsapp_messages")
         .select("whatsapp_connection_id, processed, message_type, created_at")
         .eq("organization_id", organizationId);
+      if (periodStart) {
+        query = query.gte("created_at", periodStart.toISOString());
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
@@ -68,13 +102,17 @@ export default function Statistics() {
   });
 
   const { data: transfersStats, isLoading: loadingTransfers } = useQuery({
-    queryKey: ["transfers-stats", organizationId],
+    queryKey: ["transfers-stats", organizationId, period],
     queryFn: async () => {
       if (!organizationId) return [];
-      const { data, error } = await supabase
+      let query = supabase
         .from("transfers")
         .select("branch_id, is_confirmed, amount, whatsapp_connection_id, created_at, ai_confidence, needs_review")
         .eq("organization_id", organizationId);
+      if (periodStart) {
+        query = query.gte("created_at", periodStart.toISOString());
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
@@ -141,10 +179,11 @@ export default function Statistics() {
 
   // ─── NEW CHART DATA ───
 
-  // 1) Daily trend (last 14 days)
+  // 1) Daily trend — number of days shown adapts to selected period (capped for readability)
+  const trendDays = period === "7d" ? 7 : period === "30d" ? 30 : period === "90d" ? 90 : 30;
   const dailyTrendData = (() => {
     const days: { date: string; label: string; تحويلات: number; مبلغ: number }[] = [];
-    for (let i = 13; i >= 0; i--) {
+    for (let i = trendDays - 1; i >= 0; i--) {
       const day = startOfDay(subDays(new Date(), i));
       const dayEnd = new Date(day);
       dayEnd.setDate(dayEnd.getDate() + 1);
@@ -211,14 +250,27 @@ export default function Statistics() {
 
   return (
     <DashboardLayout>
-      <div className="mb-6">
-        <div className="flex items-center gap-2 mb-2">
-          <BarChart3 className="w-6 h-6 text-primary" />
-          <h1 className="text-3xl font-bold text-foreground">الإحصائيات</h1>
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <BarChart3 className="w-6 h-6 text-primary" />
+            <h1 className="text-3xl font-bold text-foreground">الإحصائيات</h1>
+          </div>
+          <p className="text-muted-foreground">
+            تحليل مفصل لأداء الفروع والرسائل والتحويلات
+          </p>
         </div>
-        <p className="text-muted-foreground">
-          تحليل مفصل لأداء الفروع والرسائل والتحويلات
-        </p>
+        <Select value={period} onValueChange={(v) => setPeriod(v as StatsPeriod)}>
+          <SelectTrigger className="w-full sm:w-48 gap-2">
+            <Calendar className="w-4 h-4 text-muted-foreground" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {(Object.keys(PERIOD_LABELS) as StatsPeriod[]).map((key) => (
+              <SelectItem key={key} value={key}>{PERIOD_LABELS[key]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {isLoading ? (
@@ -286,7 +338,7 @@ export default function Statistics() {
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-primary" />
-                اتجاه التحويلات — آخر 14 يوم
+                اتجاه التحويلات — {PERIOD_LABELS[period]}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -328,7 +380,7 @@ export default function Statistics() {
               ) : (
                 <div className="flex flex-col items-center justify-center h-[280px] text-muted-foreground gap-2">
                   <Info className="w-8 h-8 opacity-50" />
-                  <p className="text-sm">لا توجد تحويلات في آخر 14 يوم</p>
+                  <p className="text-sm">لا توجد تحويلات في {PERIOD_LABELS[period]}</p>
                   <p className="text-xs">أرسل صورة إيصال عبر واتساب لبدء تتبع البيانات</p>
                 </div>
               )}

@@ -494,7 +494,8 @@ export default function Transfers() {
                       <InlineMemoEditor
                         value={transfer.client_memo}
                         onSave={(memo) => handleMemoSave(transfer.id, memo)}
-                        isPending={updateMutation.isPending}
+                        isPending={updateMutation.isPending && updateMutation.variables?.id === transfer.id}
+                        isError={updateMutation.isError && updateMutation.variables?.id === transfer.id}
                       />
                     </td>
                     <td className="p-3 text-center">

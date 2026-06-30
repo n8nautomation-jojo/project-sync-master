@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
+import { getFriendlyErrorMessage } from "@/lib/errorMessages";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
 import { useBranchAccess } from "@/hooks/useBranchAccess";
@@ -178,8 +179,8 @@ export function useConfirmTransfer() {
       queryClient.invalidateQueries({ queryKey: ["transfers", currentOrganization?.id] });
       toast.success("تم تأكيد التحويل بنجاح");
     },
-    onError: () => {
-      toast.error("حدث خطأ أثناء تأكيد التحويل");
+    onError: (error) => {
+      toast.error(getFriendlyErrorMessage(error, "حدث خطأ أثناء تأكيد التحويل"));
     },
   });
 }
@@ -207,8 +208,8 @@ export function useRejectTransfer() {
       queryClient.invalidateQueries({ queryKey: ["transfers", currentOrganization?.id] });
       toast.success("تم حذف التحويل");
     },
-    onError: () => {
-      toast.error("حدث خطأ أثناء حذف التحويل");
+    onError: (error) => {
+      toast.error(getFriendlyErrorMessage(error, "حدث خطأ أثناء حذف التحويل"));
     },
   });
 }
@@ -235,8 +236,8 @@ export function useResetAllTransfers() {
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats", currentOrganization?.id] });
       toast.success("تم إعادة تعيين جميع التحويلات بنجاح");
     },
-    onError: () => {
-      toast.error("حدث خطأ أثناء إعادة تعيين التحويلات");
+    onError: (error) => {
+      toast.error(getFriendlyErrorMessage(error, "حدث خطأ أثناء إعادة تعيين التحويلات"));
     },
   });
 }
@@ -258,8 +259,8 @@ export function useUpdateTransfer() {
       queryClient.invalidateQueries({ queryKey: ["transfers", currentOrganization?.id] });
       toast.success("تم تحديث التحويل بنجاح");
     },
-    onError: () => {
-      toast.error("حدث خطأ أثناء تحديث التحويل");
+    onError: (error) => {
+      toast.error(getFriendlyErrorMessage(error, "حدث خطأ أثناء تحديث التحويل"));
     },
   });
 }
@@ -327,8 +328,8 @@ export function useCreateTransfer() {
       queryClient.invalidateQueries({ queryKey: ["transfers", currentOrganization?.id] });
       toast.success("تم إضافة التحويل بنجاح");
     },
-    onError: () => {
-      toast.error("حدث خطأ أثناء إضافة التحويل");
+    onError: (error) => {
+      toast.error(getFriendlyErrorMessage(error, "حدث خطأ أثناء إضافة التحويل"));
     },
   });
 }
