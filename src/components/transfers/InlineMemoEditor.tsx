@@ -123,7 +123,9 @@ export function InlineMemoEditor({
             <Check className="w-3.5 h-3.5 text-emerald-600 animate-in zoom-in duration-200" />
           )}
           {isError && !isPending && (
-            <AlertCircle className="w-3.5 h-3.5 text-red-500" title="فشل الحفظ — اضغط للمحاولة مجدداً" />
+            <span title="فشل الحفظ — اضغط للمحاولة مجدداً">
+              <AlertCircle className="w-3.5 h-3.5 text-red-500" />
+            </span>
           )}
           {!isPending && !justSaved && !isError && (
             <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-40 transition-opacity text-primary" />
