@@ -16,7 +16,8 @@ export type AuthNavEvent =
   | "signin_error"
   | "signup_error"
   | "google_signin_success"
-  | "google_signin_error";
+  | "google_signin_error"
+  | "signin_mfa_required";
 
 interface LogEntry {
   ts: string;
