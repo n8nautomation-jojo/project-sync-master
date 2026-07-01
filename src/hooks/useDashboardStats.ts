@@ -121,7 +121,8 @@ export function useDashboardStats(filters?: DashboardFilters) {
       let allTransfersQuery = supabase
         .from("transfers")
         .select("amount, is_confirmed, created_at, branch_id")
-        .eq("organization_id", currentOrganization.id);
+        .eq("organization_id", currentOrganization.id)
+        .eq("is_deleted", false);
 
       if (effectiveBranchId !== "all") {
         allTransfersQuery = allTransfersQuery.eq("branch_id", effectiveBranchId);
@@ -131,7 +132,8 @@ export function useDashboardStats(filters?: DashboardFilters) {
       let periodQuery = supabase
         .from("transfers")
         .select("amount, is_confirmed, created_at, branch_id")
-        .eq("organization_id", currentOrganization.id);
+        .eq("organization_id", currentOrganization.id)
+        .eq("is_deleted", false);
 
       if (effectiveBranchId !== "all") {
         periodQuery = periodQuery.eq("branch_id", effectiveBranchId);
@@ -210,6 +212,7 @@ export function useBranchesRevenue() {
         .from("transfers")
         .select("branch_id, amount")
         .eq("organization_id", currentOrganization.id)
+        .eq("is_deleted", false)
         .gte("transfer_date", today);
       
       if (transfersError) throw transfersError;
@@ -265,6 +268,7 @@ export function useRecentTransfers(limit = 5) {
           branches (name)
         `)
         .eq("organization_id", currentOrganization.id)
+        .eq("is_deleted", false)
         .order("created_at", { ascending: false })
         .limit(limit);
       
