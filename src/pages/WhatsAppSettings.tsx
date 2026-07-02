@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   MessageCircle, 
@@ -92,6 +93,7 @@ const WhatsAppSettings = () => {
     deleteConnection,
     verifyConnection,
     testConnection,
+    toggleConfirmationNotifications,
   } = useWhatsAppConnections();
 
   const {
@@ -865,6 +867,20 @@ const WhatsAppSettings = () => {
                               <Users className="w-3 h-3" />
                               مجموعة: {connection.monitored_chat_name}
                             </Badge>
+                          )}
+                          {connection.connection_type === "meta" && connection.status === "connected" && (
+                            <div className="flex items-center gap-2 mt-2">
+                              <Switch
+                                checked={connection.notification_enabled}
+                                disabled={toggleConfirmationNotifications.isPending}
+                                onCheckedChange={(checked) =>
+                                  toggleConfirmationNotifications.mutate({ id: connection.id, enabled: checked })
+                                }
+                              />
+                              <span className="text-xs text-muted-foreground">
+                                إرسال تأكيد تلقائي على واتساب لكل تحويلة
+                              </span>
+                            </div>
                           )}
                         </div>
                       </div>

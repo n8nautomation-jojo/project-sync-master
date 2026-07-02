@@ -256,6 +256,71 @@ function buildClientMemo(whatsappText: string | null, bankComment: string | null
   return parts.join(" | ");
 }
 
+// ============ WHATSAPP CONFIRMATION REPLY ============
+// Sends a free-form confirmation reply to the same WhatsApp thread that sent
+// the receipt (Meta connections only, reply-in-thread, no template needed —
+// we're always within the 24h customer-service window since this fires
+// immediately after the inbound message). Fully isolated: any failure here
+// is logged and swallowed, and NEVER changes the caller's return status.
+async function sendConfirmationMessage(
+  sb: any,
+  connection: { id: string; organization_id: string; connection_type: string; meta_phone_number_id?: string | null; notification_enabled?: boolean },
+  accessToken: string | null,
+  transfer: { sender_phone: string | null | undefined; amount: number; sender_name: string | null; transfer_date: string }
+): Promise<void> {
+  try {
+    if (!connection.notification_enabled) return; // opt-in, off by default
+    if (connection.connection_type !== "meta") return; // Meta-only for now (Green API not supported yet)
+    if (!connection.meta_phone_number_id || !accessToken) return;
+    if (!transfer.sender_phone) return;
+    const recipientPhone: string = transfer.sender_phone;
+
+    const formattedAmount = Number(transfer.amount || 0).toLocaleString("en-US");
+    const body =
+      `✅ تم تسجيل تحويلة جديدة\n` +
+      `💰 المبلغ: ${formattedAmount} ج.س\n` +
+      `👤 المرسل: ${transfer.sender_name || "غير معروف"}\n` +
+      `📅 التاريخ: ${transfer.transfer_date}`;
+
+    const resp = await fetch(`https://graph.facebook.com/v18.0/${connection.meta_phone_number_id}/messages`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to: recipientPhone,
+        type: "text",
+        text: { body },
+      }),
+    });
+
+    let errorDetail: string | null = null;
+    if (!resp.ok) {
+      const errJson = await resp.json().catch(() => ({}));
+      errorDetail = JSON.stringify(errJson).substring(0, 500);
+    }
+
+    await sb.from("whatsapp_notification_log").insert({
+      connection_id: connection.id,
+      organization_id: connection.organization_id,
+      recipient_phone: recipientPhone.substring(0, 50),
+      status: resp.ok ? "sent" : "failed",
+      error_message: errorDetail,
+    });
+  } catch (err) {
+    try {
+      await sb.from("whatsapp_notification_log").insert({
+        connection_id: connection.id,
+        organization_id: connection.organization_id,
+        recipient_phone: transfer.sender_phone ? String(transfer.sender_phone).substring(0, 50) : null,
+        status: "failed",
+        error_message: String((err as Error)?.message || err).substring(0, 500),
+      });
+    } catch {
+      // Logging itself must never throw — swallow silently.
+    }
+  }
+}
+
 // ============ PROCESS SINGLE MESSAGE ============
 async function processMessage(sb: any, msg: any): Promise<{ status: string; messageId: string }> {
   const messageId = msg.message_id;
@@ -263,7 +328,7 @@ async function processMessage(sb: any, msg: any): Promise<{ status: string; mess
   try {
     const { data: connection } = await sb
       .from("whatsapp_connections")
-      .select("id, branch_id, organization_id, connection_type, monitored_chat_id")
+      .select("id, branch_id, organization_id, connection_type, monitored_chat_id, meta_phone_number_id, notification_enabled")
       .eq("id", msg.whatsapp_connection_id)
       .single();
 
@@ -445,6 +510,17 @@ async function processMessage(sb: any, msg: any): Promise<{ status: string; mess
       });
       return { status: "transfer_failed", messageId };
     }
+
+    // Awaited so the send actually completes before this Edge Function
+    // instance returns (Deno may suspend background work otherwise),
+    // but fully isolated: any failure inside is caught and logged there,
+    // and never changes this function's return value below.
+    await sendConfirmationMessage(
+      sb,
+      connection,
+      creds?.access_token || null,
+      { sender_phone: msg.from_number, amount: analysis.amount, sender_name: analysis.sender ? String(analysis.sender) : null, transfer_date: validatedDate }
+    );
 
     return { status: "success", messageId };
   } catch (error) {

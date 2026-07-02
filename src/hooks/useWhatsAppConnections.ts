@@ -19,6 +19,7 @@ export interface WhatsAppConnection {
   verification_expires_at: string | null;
   monitored_chat_id: string | null;
   monitored_chat_name: string | null;
+  notification_enabled: boolean;
   created_at: string;
   updated_at: string;
   branches?: Branch;
@@ -123,6 +124,26 @@ export const useWhatsAppConnections = () => {
     },
   });
 
+  const toggleConfirmationNotifications = useMutation({
+    mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) => {
+      const { data, error } = await supabase
+        .from('whatsapp_connections')
+        .update({ notification_enabled: enabled })
+        .eq('id', id)
+        .select('*, branches(*)')
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-connections', orgId] });
+      toast({ title: "تم الحفظ", description: "تم تحديث إعداد رسائل التأكيد التلقائية" });
+    },
+    onError: () => {
+      toast({ title: "خطأ", description: "فشل تحديث إعداد رسائل التأكيد", variant: "destructive" });
+    },
+  });
+
   const deleteConnection = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from('whatsapp_connections').delete().eq('id', id);
@@ -195,5 +216,5 @@ export const useWhatsAppConnections = () => {
     },
   });
 
-  return { connections, isLoading, error, addConnection, updateConnectionStatus, deleteConnection, verifyConnection, testConnection };
+  return { connections, isLoading, error, addConnection, updateConnectionStatus, deleteConnection, verifyConnection, testConnection, toggleConfirmationNotifications };
 };
