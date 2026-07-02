@@ -19,6 +19,7 @@ import Transfers from "./pages/Transfers";
 import Reports from "./pages/Reports";
 import WhatsAppSettings from "./pages/WhatsAppSettings";
 import WhatsAppLogs from "./pages/WhatsAppLogs";
+import WhatsAppConfirmationLog from "./pages/WhatsAppConfirmationLog";
 import Statistics from "./pages/Statistics";
 import Users from "./pages/Users";
 import Settings from "./pages/Settings";
