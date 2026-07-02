@@ -81,6 +81,9 @@ const App = () => (
               <Route path="/whatsapp-logs" element={
                 <ProtectedRoute><WhatsAppLogs /></ProtectedRoute>
               } />
+              <Route path="/whatsapp-confirmation-log" element={
+                <ProtectedRoute><WhatsAppConfirmationLog /></ProtectedRoute>
+              } />
               <Route path="/statistics" element={
                 <ProtectedRoute><Statistics /></ProtectedRoute>
               } />
