@@ -553,11 +553,15 @@ async function processMessage(sb: any, msg: any): Promise<{ status: string; mess
     // instance returns (Deno may suspend background work otherwise),
     // but fully isolated: any failure inside is caught and logged there,
     // and never changes this function's return value below.
+    // Reuse chatId already parsed above for smart routing; strip the WA suffix
+    // for Meta (which needs a plain phone number), keep it for Green API.
+    const incomingChatId = msg.content?.match?.(/chatId:([^\s]+)/)?.[1] || null;
     await sendConfirmationMessage(
       sb,
       connection,
-      creds?.access_token || null,
-      { sender_phone: msg.from_number, amount: analysis.amount, sender_name: analysis.sender ? String(analysis.sender) : null, transfer_date: validatedDate }
+      creds || null,
+      { sender_phone: msg.from_number, amount: analysis.amount, sender_name: analysis.sender ? String(analysis.sender) : null, transfer_date: validatedDate },
+      incomingChatId
     );
 
     return { status: "success", messageId };
