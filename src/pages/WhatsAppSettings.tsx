@@ -868,7 +868,7 @@ const WhatsAppSettings = () => {
                               مجموعة: {connection.monitored_chat_name}
                             </Badge>
                           )}
-                          {connection.connection_type === "meta" && connection.status === "connected" && (
+                          {connection.status === "connected" && (
                             <div className="flex items-center gap-2 mt-2">
                               <Switch
                                 checked={connection.notification_enabled}

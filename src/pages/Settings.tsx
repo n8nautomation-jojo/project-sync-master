@@ -219,10 +219,13 @@ export default function Settings() {
               </div>
               <div><h2 className="font-bold text-foreground">واتساب</h2></div>
             </div>
-            <div className="p-5">
+            <div className="p-5 space-y-2">
               <p className="text-sm text-muted-foreground mb-3">إدارة اتصالات واتساب للفروع</p>
               <Button variant="outline" className="w-full" onClick={() => (window.location.href = "/whatsapp")}>
                 إعدادات واتساب
+              </Button>
+              <Button variant="outline" className="w-full" onClick={() => (window.location.href = "/whatsapp-confirmation-log")}>
+                سجل رسائل التأكيد
               </Button>
             </div>
           </div>
