@@ -366,7 +366,7 @@ async function processMessage(sb: any, msg: any): Promise<{ status: string; mess
   try {
     const { data: connection } = await sb
       .from("whatsapp_connections")
-      .select("id, branch_id, organization_id, connection_type, monitored_chat_id, meta_phone_number_id, notification_enabled")
+      .select("id, branch_id, organization_id, connection_type, monitored_chat_id, meta_phone_number_id, green_api_instance_id, notification_enabled")
       .eq("id", msg.whatsapp_connection_id)
       .single();
 
@@ -375,10 +375,10 @@ async function processMessage(sb: any, msg: any): Promise<{ status: string; mess
       return { status: "no_connection", messageId };
     }
 
-    // Fetch access token from credentials table
+    // Fetch access token + green_api_token from credentials table
     const { data: creds } = await sb
       .from("whatsapp_credentials")
-      .select("access_token")
+      .select("access_token, green_api_token")
       .eq("connection_id", connection.id)
       .single();
 
