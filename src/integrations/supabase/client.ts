@@ -2,28 +2,8 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
-// Fail loudly with a visible message instead of a silent white screen when
-// the build environment is missing required env vars (e.g. Lovable/Netlify
-// build settings not configured). createClient() throws on undefined URL,
-// which happens at module-import time — before React/ErrorBoundary can
-// catch it — so we render a plain-DOM fallback message directly.
-if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-  const missing = [
-    !SUPABASE_URL && 'VITE_SUPABASE_URL',
-    !SUPABASE_PUBLISHABLE_KEY && 'VITE_SUPABASE_PUBLISHABLE_KEY',
-  ].filter(Boolean).join(', ');
-
-  document.body.innerHTML = `
-    <div style="font-family: system-ui, sans-serif; max-width: 640px; margin: 60px auto; padding: 24px; direction: rtl; text-align: right;">
-      <h2 style="color:#b91c1c;">خطأ في إعدادات النشر</h2>
-      <p>متغيرات البيئة التالية غير موجودة في بيئة البناء: <strong>${missing}</strong></p>
-      <p>الرجاء إضافتها من: Lovable → Settings → Environment Variables (أو Netlify → Site settings → Environment variables) ثم إعادة النشر.</p>
-    </div>`;
-  throw new Error(`Missing required env vars: ${missing}`);
-}
+const SUPABASE_URL = "https://uwtcjimjulmhazybmvyd.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV3dGNqaW1qdWxtaGF6eWJtdnlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1Njk5NTksImV4cCI6MjA5MTE0NTk1OX0.aqFSiYy5OpgRBa2rkFNzoj16TNRnWPxiThNbOgdpq8E";
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";

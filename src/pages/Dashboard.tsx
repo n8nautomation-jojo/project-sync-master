@@ -27,7 +27,7 @@ import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 
 export default function Dashboard() {
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>("month");
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>("all");
   const [customMonth, setCustomMonth] = useState<string>(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
