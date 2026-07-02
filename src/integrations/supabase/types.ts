@@ -1339,6 +1339,7 @@ export type Database = {
           meta_phone_number_id: string | null
           monitored_chat_id: string | null
           monitored_chat_name: string | null
+          notification_enabled: boolean
           organization_id: string | null
           phone_number: string
           status: Database["public"]["Enums"]["whatsapp_connection_status"]
@@ -1358,6 +1359,7 @@ export type Database = {
           meta_phone_number_id?: string | null
           monitored_chat_id?: string | null
           monitored_chat_name?: string | null
+          notification_enabled?: boolean
           organization_id?: string | null
           phone_number: string
           status?: Database["public"]["Enums"]["whatsapp_connection_status"]
@@ -1377,6 +1379,7 @@ export type Database = {
           meta_phone_number_id?: string | null
           monitored_chat_id?: string | null
           monitored_chat_name?: string | null
+          notification_enabled?: boolean
           organization_id?: string | null
           phone_number?: string
           status?: Database["public"]["Enums"]["whatsapp_connection_status"]
@@ -1484,6 +1487,61 @@ export type Database = {
             columns: ["whatsapp_connection_id"]
             isOneToOne: false
             referencedRelation: "whatsapp_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_notification_log: {
+        Row: {
+          connection_id: string
+          created_at: string
+          error_message: string | null
+          id: string
+          organization_id: string
+          recipient_phone: string | null
+          status: string
+          transfer_id: string | null
+        }
+        Insert: {
+          connection_id: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          organization_id: string
+          recipient_phone?: string | null
+          status: string
+          transfer_id?: string | null
+        }
+        Update: {
+          connection_id?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          organization_id?: string
+          recipient_phone?: string | null
+          status?: string
+          transfer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_notification_log_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_notification_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_notification_log_transfer_id_fkey"
+            columns: ["transfer_id"]
+            isOneToOne: false
+            referencedRelation: "transfers"
             referencedColumns: ["id"]
           },
         ]

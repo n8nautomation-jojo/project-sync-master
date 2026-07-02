@@ -264,16 +264,24 @@ function buildClientMemo(whatsappText: string | null, bankComment: string | null
 // is logged and swallowed, and NEVER changes the caller's return status.
 async function sendConfirmationMessage(
   sb: any,
-  connection: { id: string; organization_id: string; connection_type: string; meta_phone_number_id?: string | null; notification_enabled?: boolean },
-  accessToken: string | null,
-  transfer: { sender_phone: string | null | undefined; amount: number; sender_name: string | null; transfer_date: string }
+  connection: {
+    id: string;
+    organization_id: string;
+    connection_type: string;
+    meta_phone_number_id?: string | null;
+    green_api_instance_id?: string | null;
+    monitored_chat_id?: string | null;
+    notification_enabled?: boolean;
+  },
+  credentials: { access_token?: string | null; green_api_token?: string | null } | null,
+  transfer: { sender_phone: string | null | undefined; amount: number; sender_name: string | null; transfer_date: string },
+  incomingChatId?: string | null
 ): Promise<void> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 5000);
+  let recipient: string | null = null;
   try {
     if (!connection.notification_enabled) return; // opt-in, off by default
-    if (connection.connection_type !== "meta") return; // Meta-only for now (Green API not supported yet)
-    if (!connection.meta_phone_number_id || !accessToken) return;
-    if (!transfer.sender_phone) return;
-    const recipientPhone: string = transfer.sender_phone;
 
     const formattedAmount = Number(transfer.amount || 0).toLocaleString("en-US");
     const body =
@@ -282,27 +290,55 @@ async function sendConfirmationMessage(
       `👤 المرسل: ${transfer.sender_name || "غير معروف"}\n` +
       `📅 التاريخ: ${transfer.transfer_date}`;
 
-    const resp = await fetch(`https://graph.facebook.com/v18.0/${connection.meta_phone_number_id}/messages`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        to: recipientPhone,
-        type: "text",
-        text: { body },
-      }),
-    });
+    let resp: Response;
+
+    if (connection.connection_type === "meta") {
+      if (!connection.meta_phone_number_id || !credentials?.access_token) return;
+      if (!transfer.sender_phone) return;
+      recipient = transfer.sender_phone;
+      resp = await fetch(`https://graph.facebook.com/v18.0/${connection.meta_phone_number_id}/messages`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${credentials.access_token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to: recipient,
+          type: "text",
+          text: { body },
+        }),
+        signal: ctrl.signal,
+      });
+    } else if (connection.connection_type === "green_api") {
+      if (!connection.green_api_instance_id || !credentials?.green_api_token) return;
+      // Prefer the actual incoming chatId (correctly targets groups); fall back
+      // to monitored group, then to a 1-to-1 chat derived from sender_phone.
+      let chatId = incomingChatId || connection.monitored_chat_id || null;
+      if (!chatId && transfer.sender_phone) {
+        const raw = String(transfer.sender_phone);
+        chatId = raw.includes("@") ? raw : `${raw}@c.us`;
+      }
+      if (!chatId) return;
+      recipient = chatId;
+      const url = `https://api.green-api.com/waInstance${connection.green_api_instance_id}/sendMessage/${credentials.green_api_token}`;
+      resp = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chatId, message: body }),
+        signal: ctrl.signal,
+      });
+    } else {
+      return; // unknown connection type
+    }
 
     let errorDetail: string | null = null;
     if (!resp.ok) {
-      const errJson = await resp.json().catch(() => ({}));
-      errorDetail = JSON.stringify(errJson).substring(0, 500);
+      const errText = await resp.text().catch(() => "");
+      errorDetail = `[${connection.connection_type}] ${errText}`.substring(0, 500);
     }
 
     await sb.from("whatsapp_notification_log").insert({
       connection_id: connection.id,
       organization_id: connection.organization_id,
-      recipient_phone: recipientPhone.substring(0, 50),
+      recipient_phone: recipient ? recipient.substring(0, 50) : null,
       status: resp.ok ? "sent" : "failed",
       error_message: errorDetail,
     });
@@ -311,13 +347,15 @@ async function sendConfirmationMessage(
       await sb.from("whatsapp_notification_log").insert({
         connection_id: connection.id,
         organization_id: connection.organization_id,
-        recipient_phone: transfer.sender_phone ? String(transfer.sender_phone).substring(0, 50) : null,
+        recipient_phone: recipient ? recipient.substring(0, 50) : (transfer.sender_phone ? String(transfer.sender_phone).substring(0, 50) : null),
         status: "failed",
-        error_message: String((err as Error)?.message || err).substring(0, 500),
+        error_message: `[${connection.connection_type}] ${String((err as Error)?.message || err)}`.substring(0, 500),
       });
     } catch {
       // Logging itself must never throw — swallow silently.
     }
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -328,7 +366,7 @@ async function processMessage(sb: any, msg: any): Promise<{ status: string; mess
   try {
     const { data: connection } = await sb
       .from("whatsapp_connections")
-      .select("id, branch_id, organization_id, connection_type, monitored_chat_id, meta_phone_number_id, notification_enabled")
+      .select("id, branch_id, organization_id, connection_type, monitored_chat_id, meta_phone_number_id, green_api_instance_id, notification_enabled")
       .eq("id", msg.whatsapp_connection_id)
       .single();
 
@@ -337,10 +375,10 @@ async function processMessage(sb: any, msg: any): Promise<{ status: string; mess
       return { status: "no_connection", messageId };
     }
 
-    // Fetch access token from credentials table
+    // Fetch access token + green_api_token from credentials table
     const { data: creds } = await sb
       .from("whatsapp_credentials")
-      .select("access_token")
+      .select("access_token, green_api_token")
       .eq("connection_id", connection.id)
       .single();
 
@@ -515,11 +553,15 @@ async function processMessage(sb: any, msg: any): Promise<{ status: string; mess
     // instance returns (Deno may suspend background work otherwise),
     // but fully isolated: any failure inside is caught and logged there,
     // and never changes this function's return value below.
+    // Reuse chatId already parsed above for smart routing; strip the WA suffix
+    // for Meta (which needs a plain phone number), keep it for Green API.
+    const incomingChatId = msg.content?.match?.(/chatId:([^\s]+)/)?.[1] || null;
     await sendConfirmationMessage(
       sb,
       connection,
-      creds?.access_token || null,
-      { sender_phone: msg.from_number, amount: analysis.amount, sender_name: analysis.sender ? String(analysis.sender) : null, transfer_date: validatedDate }
+      creds || null,
+      { sender_phone: msg.from_number, amount: analysis.amount, sender_name: analysis.sender ? String(analysis.sender) : null, transfer_date: validatedDate },
+      incomingChatId
     );
 
     return { status: "success", messageId };
