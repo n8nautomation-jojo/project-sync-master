@@ -1,69 +1,60 @@
+# تقرير أداء اختبار الحمل — loader.io
 
-# مراجعة ميزة تأكيد واتساب — الحالة الفعلية والخطوات المتبقية
+## 1) نتائج الاختبار الأول
 
-## ما تم تنفيذه فعلاً (فحصت الكود)
+| المقياس | القيمة | التقييم |
+|---|---|---|
+| عدد العملاء | 500 خلال دقيقة | حمل خفيف-متوسط |
+| متوسط زمن الاستجابة | **65 ms** | ممتاز |
+| Min / Max | 36 / 245 ms | جيد جداً |
+| نسبة الأخطاء | **0.0%** | مثالي |
+| الطلبات الناجحة | 477 / 500 | 95.4% |
+| Timeouts / Network errors | 0 / 0 | مثالي |
+| Redirects | 477 valid | طبيعي (HTTP→HTTPS) |
+| Bandwidth | 6.03 MB مُرسل / 208 KB مُستقبل | طبيعي |
 
-| العنصر | الحالة |
-|---|---|
-| Migration: `notification_enabled` + جدول `whatsapp_notification_log` + RLS | ✅ منفَّذ (`20260702120000_...sql`) |
-| Toggle UI في WhatsApp Settings | ✅ منفَّذ |
-| Hook `toggleConfirmationNotifications` | ✅ منفَّذ |
-| `sendConfirmationMessage()` في `process-receipt` (Meta فقط) | ✅ منفَّذ، async ومعزول |
-| تسجيل نجاح/فشل الإرسال | ✅ منفَّذ |
-| **دعم Green API** | ❌ مفقود — الكود يرجع مبكراً: `if (connection.connection_type !== "meta") return` |
-| **حفظ chatId في التحويلة** (لازم للرد داخل مجموعة Green API) | ❌ مفقود |
-| UI: عرض سجل الفشل للأدمن (اختياري لكن مفيد) | ❌ مفقود |
+**ملاحظة مهمة:** الاختبار كان على `http://hesapaty.lovable.app` (صفحة هبوط SPA ثابتة) — أي أنه اختبر **CDN + Hosting فقط**، ولم يختبر:
+- Supabase (قاعدة البيانات، RLS، Auth)
+- Edge Functions (whatsapp-webhook, process-receipt, extract-transfer-amount)
+- Storage (رفع الإيصالات)
+- Realtime subscriptions
 
-الخلاصة: الخطة الأصلية (الخيار أ لـ Meta) نُفِّذت كاملة. الناقص هو تمديدها لـ Green API — وهذا ما طلبته.
+## 2) هل النظام جاهز للسوق؟
 
-## ما سنبنيه الآن
+**جاهز جزئياً** ✅ للواجهة الأمامية / ⚠️ لم يُختبر الـ Backend تحت حمل
 
-### 1. تمديد `sendConfirmationMessage` لدعم Green API
-- إزالة شرط `connection_type !== "meta"` وتفريع المسار:
-  - **Meta**: كما هو الآن (`graph.facebook.com/v18.0/{phone_number_id}/messages`).
-  - **Green API**: `POST https://api.green-api.com/waInstance{green_api_instance_id}/sendMessage/{green_api_token}` بجسم `{ chatId, message }`.
-- جلب `green_api_token` و `green_api_instance_id` من `whatsapp_credentials` / `whatsapp_connections` (يُجلبان أصلاً في نفس الاستعلام).
-- تحديد المستقبل:
-  - **Green API خاص (1-to-1)**: `chatId = sender_phone@c.us`.
-  - **Green API مجموعة**: يجب استخدام `chatId` الأصلي للمجموعة (وإلا سيصل الرد كرسالة خاصة للمرسل بدل نفس المحادثة).
+- الواجهة الأمامية (Vite + CDN): جاهزة تماماً، تتحمل 500 مستخدم متزامن بسهولة.
+- الـ Backend (Lovable Cloud / Edge Functions): **غير مُختبر تحت حمل**، وهو نقطة الاختناق الحقيقية.
+- التقييم النهائي: **صالح لإطلاق تجريبي (Beta) بعدد محدود من المنظمات**، لكن قبل الإطلاق التجاري الواسع يجب اختبار الـ Backend.
 
-### 2. تمرير chatId إلى الرد
-- الأبسط والأقل تدخّلاً: قراءة `chatId` من صف `whatsapp_messages` الحالي (`msg`) أثناء المعالجة وتمريره لـ `sendConfirmationMessage` كـ optional param. لا حاجة لتعديل schema.
-- fallback: لو `chatId` غير موجود، استخدام `sender_phone@c.us`.
+## 3) الخطة المقترحة — اختبارات حمل إضافية
 
-### 3. تحديث SELECT في `processMessage`
-إضافة `green_api_instance_id` للاستعلام + استعلام `green_api_token` من `whatsapp_credentials` (بالفعل جدول موجود).
+### المرحلة الأولى: اختبار Edge Functions (الأولوية القصوى)
+اختبر النقاط الحساسة التي تُستدعى عند وصول إشعار واتساب:
+1. `POST /functions/v1/whatsapp-webhook` — 100 عميل/دقيقة (نقطة الدخول الرئيسية)
+2. `POST /functions/v1/extract-transfer-amount` — 50 عميل/دقيقة (تستخدم AI Gateway)
+3. `POST /functions/v1/process-receipt` — 50 عميل/دقيقة
 
-### 4. تحسينات صغيرة (بدون كسر)
-- إضافة timeout (5 ثوانٍ) على `fetch` لتفادي تعليق edge function عند بطء المزوّد.
-- تسجيل `connection_type` في `error_message` عند الفشل لتسهيل التشخيص.
-- إضافة `transfer_id` إلى `whatsapp_notification_log` (العمود موجود في الـ schema لكنه غير مُعبَّأ حالياً).
+### المرحلة الثانية: اختبار قراءة قاعدة البيانات
+- صفحة `/dashboard` بعد تسجيل الدخول — 200 عميل/دقيقة
+- صفحة `/transfers` (تحتوي على استعلامات RLS كثيفة) — 200 عميل/دقيقة
 
-### 5. ما لن نغيّره (حماية للمنجَز)
-- لن نلمس migration الحالي أو RLS.
-- لن نغيّر UI الـ toggle الحالي — يبقى مطفأً افتراضياً.
-- لن نلمس `client.ts` أو أي شيء خارج نطاق الميزة.
-- لن نمس مسار Meta الحالي (only-add logic).
+### المرحلة الثالثة: اختبار تصاعدي (Stress)
+- 1000 → 2000 → 5000 عميل على الصفحة الرئيسية لتحديد سقف التحمل.
 
-## تفاصيل تقنية
+## 4) توصيات فورية قبل الإطلاق
 
-**ملف واحد فقط سيُعدَّل:**
-`supabase/functions/process-receipt/index.ts`
-- توسيع signature: `sendConfirmationMessage(sb, connection, credentials, transfer, chatId?)`
-- إضافة فرع Green API داخلها.
-- تحديث SELECT + credentials query + نقطة الاستدعاء لتمرير `msg.chat_id` أو مكافئه.
+1. **مراقبة الفهارس (Indexes):** التأكد من وجود فهارس على `transfers.organization_id`, `transfers.transfer_date`, `whatsapp_confirmation_log.transfer_id`.
+2. **مراقبة استخدام AI Gateway:** كل إيصال يستهلك credits — وضع حد شهري في `credits--update_limit`.
+3. **Realtime channels:** التحقق من عدم وجود اشتراكات متسربة (memory leaks) في `useTransfers`, `WhatsAppConfirmationLog`.
+4. **Rate limiting على whatsapp-webhook:** موجود جدول `webhook_rate_limits` — التأكد من تفعيله.
+5. **ترقية Lovable Cloud Instance:** إن تجاوزت 100 مستخدم نشط متزامن، ارفع حجم النسخة من Advanced settings.
 
-**لا migration، لا تغيير UI، لا تغيير hooks** — الـ toggle الحالي يعمل كما هو لكلا النوعين تلقائياً بعد النشر.
+## 5) الخلاصة
 
-## اختبار
-1. Green API خاص: إرسال صورة من رقم شخصي → تأكد وصول الرد لنفس الرقم.
-2. Green API مجموعة (مع `monitored_chat_id` مضبوط): إرسال صورة في المجموعة → تأكد أن الرد في نفس المجموعة.
-3. Meta: لا تغيير سلوك (regression check).
-4. فحص `whatsapp_notification_log`: صف `sent` لكل حالة.
+الاختبار الأول ممتاز لكنه يقيس شيئاً محدوداً (CDN). قبل الإطلاق التجاري:
+- شغّل اختبارات المرحلة الأولى (Edge Functions) — هذه هي التي ستكشف مشاكل حقيقية.
+- راقب `supabase--analytics_query` أثناء الاختبار لرؤية أي أخطاء في قاعدة البيانات.
+- إن أردت، أستطيع تجهيز نقاط اختبار محمية (endpoints قابلة للاختبار من loader.io) للـ Edge Functions.
 
-## المخاطر
-| خطر | تخفيف |
-|---|---|
-| رد بصوت عالٍ في مجموعة كبيرة → إزعاج | الميزة opt-in، الأدمن يفعّلها عن وعي |
-| Green API غير رسمي، احتمال فشل مؤقت | فشل الإرسال معزول بالكامل ولا يوقف حفظ التحويلة (السلوك الحالي) |
-| رسائل مكررة عند retry | `process-receipt` يعمل مرة واحدة لكل رسالة بفضل `processed` flag الموجود |
+**هل تريد أن أبدأ بتجهيز اختبار Edge Functions أم بمراجعة الفهارس والأداء الداخلي أولاً؟**
