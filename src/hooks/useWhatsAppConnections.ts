@@ -39,20 +39,40 @@ export const useWhatsAppConnections = () => {
   const { data: connections = [], isLoading, error } = useQuery({
     queryKey: ['whatsapp-connections', orgId],
     queryFn: async () => {
+      // Fetch connections + branches. Credentials fetched separately so a
+      // permission error on whatsapp_credentials doesn't break the entire page.
       const { data, error } = await supabase
         .from('whatsapp_connections')
-        .select(`*, branches(*), whatsapp_credentials(id, connection_id, phone_number, created_at)`)
+        .select(`*, branches(*)`)
         .eq('organization_id', orgId!)
         .order('created_at', { ascending: false });
-      
-      if (error) throw error;
+
+      if (error) {
+        console.error('[useWhatsAppConnections] connections query error:', error);
+        throw error;
+      }
+
+      const connectionIds = (data || []).map((c: any) => c.id);
+      let credsByConn: Record<string, any> = {};
+      if (connectionIds.length > 0) {
+        const { data: creds, error: credsErr } = await supabase
+          .from('whatsapp_credentials')
+          .select('id, connection_id, access_token, green_api_token, created_at')
+          .in('connection_id', connectionIds);
+        if (credsErr) {
+          console.warn('[useWhatsAppConnections] credentials fetch failed (non-fatal):', credsErr);
+        } else {
+          for (const c of creds || []) credsByConn[(c as any).connection_id] = c;
+        }
+      }
+
       return (data || []).map((item: any) => ({
         ...item,
-        credentials: item.whatsapp_credentials?.[0] || item.whatsapp_credentials || null,
-        whatsapp_credentials: undefined,
+        credentials: credsByConn[item.id] || null,
       })) as WhatsAppConnection[];
     },
     enabled: !!orgId,
+    retry: 1,
   });
 
   const addConnection = useMutation({
