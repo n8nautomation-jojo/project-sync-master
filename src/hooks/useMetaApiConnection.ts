@@ -15,6 +15,21 @@ interface TestMetaConnectionParams {
   accessToken: string;
 }
 
+export interface DiscoveredPhone {
+  id: string;
+  display_phone_number: string;
+  verified_name?: string;
+  quality_rating?: string;
+  code_verification_status?: string;
+  waba_id: string;
+}
+
+// Generate a URL-safe random verify token unique per connection.
+function generateVerifyToken(): string {
+  const uuid = (crypto as any).randomUUID?.() ?? Math.random().toString(36).slice(2);
+  return `hst_${String(uuid).replace(/-/g, "")}`.substring(0, 48);
+}
+
 export const useMetaApiConnection = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -26,6 +41,8 @@ export const useMetaApiConnection = () => {
         throw new Error("لا توجد مؤسسة محددة");
       }
 
+      const verifyToken = generateVerifyToken();
+
       // Insert connection without token
       const { data, error } = await supabase
         .from("whatsapp_connections")
@@ -34,6 +51,7 @@ export const useMetaApiConnection = () => {
           phone_number: phoneNumber,
           connection_type: "meta",
           meta_phone_number_id: phoneNumberId,
+          webhook_verify_token: verifyToken,
           status: "pending",
           organization_id: currentOrganization.id,
         })
@@ -60,7 +78,7 @@ export const useMetaApiConnection = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["whatsapp-connections"] });
-      toast({ title: "تم الربط بنجاح", description: "تم ربط WhatsApp Cloud API بالفرع بنجاح." });
+      toast({ title: "تم الحفظ بنجاح", description: "بقي فقط إعداد Webhook في Meta ثم سيتصل تلقائياً." });
     },
     onError: (error: Error) => {
       toast({ title: "خطأ في الربط", description: error.message, variant: "destructive" });
@@ -70,12 +88,12 @@ export const useMetaApiConnection = () => {
   const testMetaConnection = useMutation({
     mutationFn: async ({ phoneNumberId, accessToken }: TestMetaConnectionParams) => {
       const response = await fetch(
-        `https://graph.facebook.com/v18.0/${phoneNumberId}`,
+        `https://graph.facebook.com/v20.0/${phoneNumberId}?fields=display_phone_number,verified_name,quality_rating,code_verification_status`,
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || "فشل الاتصال بـ Meta API");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData?.error?.message || "فشل الاتصال بـ Meta API");
       }
       return await response.json();
     },
@@ -90,11 +108,25 @@ export const useMetaApiConnection = () => {
     },
   });
 
+  const discoverPhoneNumbers = useMutation({
+    mutationFn: async ({ accessToken }: { accessToken: string }): Promise<DiscoveredPhone[]> => {
+      const { data, error } = await supabase.functions.invoke("meta-list-phone-numbers", {
+        body: { accessToken },
+      });
+      if (error) throw new Error(error.message || "فشل جلب الأرقام");
+      if ((data as any)?.error) throw new Error((data as any).error);
+      return ((data as any)?.phones || []) as DiscoveredPhone[];
+    },
+    onError: (error: Error) => {
+      toast({ title: "تعذّر جلب الأرقام", description: error.message, variant: "destructive" });
+    },
+  });
+
   const getMetaWebhookUrl = () => {
     const baseUrl = import.meta.env.VITE_SUPABASE_URL;
     if (!baseUrl) return "";
     return new URL("/functions/v1/meta-webhook", baseUrl).toString();
   };
 
-  return { addMetaConnection, testMetaConnection, getMetaWebhookUrl };
+  return { addMetaConnection, testMetaConnection, discoverPhoneNumbers, getMetaWebhookUrl };
 };
