@@ -70,21 +70,34 @@ serve(async (req) => {
 
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  // GET: Webhook verification
+  // GET: Webhook verification. Accept per-connection token OR global env fallback.
   if (req.method === "GET") {
     const mode = url.searchParams.get("hub.mode");
     const token = url.searchParams.get("hub.verify_token");
     const challenge = url.searchParams.get("hub.challenge");
-    const VERIFY_TOKEN = Deno.env.get("META_WEBHOOK_VERIFY_TOKEN");
-    if (!VERIFY_TOKEN) {
-      console.error("META_WEBHOOK_VERIFY_TOKEN is not configured — refusing verification");
-      return new Response("Server misconfigured", { status: 500 });
+    if (mode !== "subscribe" || !token) {
+      return new Response("Forbidden", { status: 403 });
     }
-    if (mode === "subscribe" && token === VERIFY_TOKEN) {
-      return new Response(challenge, { status: 200, headers: { "Content-Type": "text/plain" } });
+    // 1) Try per-connection verify token
+    const sbVerify = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
+    const { data: match } = await sbVerify
+      .from("whatsapp_connections")
+      .select("id")
+      .eq("webhook_verify_token", token)
+      .eq("connection_type", "meta")
+      .limit(1)
+      .maybeSingle();
+    if (match) {
+      return new Response(challenge ?? "", { status: 200, headers: { "Content-Type": "text/plain" } });
+    }
+    // 2) Fallback to legacy global env token (backwards compat)
+    const VERIFY_TOKEN = Deno.env.get("META_WEBHOOK_VERIFY_TOKEN");
+    if (VERIFY_TOKEN && token === VERIFY_TOKEN) {
+      return new Response(challenge ?? "", { status: 200, headers: { "Content-Type": "text/plain" } });
     }
     return new Response("Forbidden", { status: 403 });
   }
+
 
   const sb = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
 

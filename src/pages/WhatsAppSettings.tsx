@@ -59,6 +59,8 @@ import { QuickUpload } from "@/components/QuickUpload";
 import { MetaUsageTracker } from "@/components/whatsapp/MetaUsageTracker";
 import { MetaApiSetupGuide } from "@/components/whatsapp/MetaApiSetupGuide";
 import { GroupFilterDialog } from "@/components/whatsapp/GroupFilterDialog";
+import { MetaConnectionWizard } from "@/components/whatsapp/MetaConnectionWizard";
+
 
 const getFunctionUrl = (functionName: string) => {
   const baseUrl = import.meta.env.VITE_SUPABASE_URL;
