@@ -468,144 +468,15 @@ const WhatsAppSettings = () => {
                     </TabsTrigger>
                   </TabsList>
 
-                  {/* Meta API Tab */}
+                  {/* Meta API Tab — wizard */}
                   <TabsContent value="meta" className="space-y-4 mt-4">
-                    <Alert className="bg-blue-500/10 border-blue-500/30">
-                      <Shield className="h-4 w-4 text-blue-400" />
-                      <AlertDescription className="text-sm">
-                        <strong>الخيار الموصى به!</strong> رسمي من Meta، مجاني لاستقبال الرسائل، وآمن 100%
-                      </AlertDescription>
-                    </Alert>
-
-                    <div className="space-y-4">
-                      <div className="space-y-3">
-                        <Label>الفرع</Label>
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            variant={!useCustomBranch ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => {
-                              setUseCustomBranch(false);
-                              setCustomBranchName("");
-                            }}
-                            className="flex-1"
-                          >
-                            اختر من الموجود
-                          </Button>
-                          <Button
-                            type="button"
-                            variant={useCustomBranch ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => {
-                              setUseCustomBranch(true);
-                              setSelectedBranch("");
-                            }}
-                            className="flex-1"
-                          >
-                            أدخل اسم جديد
-                          </Button>
-                        </div>
-                        
-                        {!useCustomBranch ? (
-                          <Select value={selectedBranch} onValueChange={setSelectedBranch}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="اختر الفرع" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {availableBranches.map((branch) => (
-                                <SelectItem key={branch.id} value={branch.id}>
-                                  {branch.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <Input
-                            placeholder="أدخل اسم الفرع الجديد"
-                            value={customBranchName}
-                            onChange={(e) => setCustomBranchName(e.target.value)}
-                          />
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="phone">رقم WhatsApp Business</Label>
-                        <Input
-                          id="phone"
-                          type="tel"
-                          placeholder="+249911234567"
-                          value={phoneNumber}
-                          onChange={(e) => setPhoneNumber(e.target.value)}
-                          className="text-left"
-                          dir="ltr"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="phoneNumberId" className="flex items-center gap-2">
-                          <Phone className="w-4 h-4" />
-                          Phone Number ID
-                        </Label>
-                        <Input
-                          id="phoneNumberId"
-                          placeholder="123456789012345"
-                          value={phoneNumberId}
-                          onChange={(e) => setPhoneNumberId(e.target.value)}
-                          className="text-left font-mono"
-                          dir="ltr"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="accessToken" className="flex items-center gap-2">
-                          <Key className="w-4 h-4" />
-                          Access Token
-                        </Label>
-                        <Input
-                          id="accessToken"
-                          type="password"
-                          placeholder="EAAxxxxxxx..."
-                          value={accessToken}
-                          onChange={(e) => setAccessToken(e.target.value)}
-                          className="text-left font-mono"
-                          dir="ltr"
-                        />
-                      </div>
-
-                      <Button
-                        variant="outline"
-                        onClick={handleTestMetaApi}
-                        className="w-full gap-2"
-                        disabled={!phoneNumberId || !accessToken || testMetaConnection.isPending}
-                      >
-                        {testMetaConnection.isPending ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Zap className="w-4 h-4" />
-                        )}
-                        اختبار الاتصال
-                      </Button>
-
-                      <Button
-                        onClick={handleAddMetaConnection}
-                        className="w-full gap-2"
-                        disabled={
-                          (!useCustomBranch && !selectedBranch) || 
-                          (useCustomBranch && !customBranchName.trim()) || 
-                          !phoneNumber || !accessToken || !phoneNumberId ||
-                          addMetaConnection.isPending
-                        }
-                      >
-                        {addMetaConnection.isPending ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Zap className="w-4 h-4" />
-                        )}
-                        تفعيل الربط
-                      </Button>
-                    </div>
+                    <MetaConnectionWizard
+                      webhookUrl={getFunctionUrl("meta-webhook")}
+                      onCancel={() => { setIsDialogOpen(false); resetForm(); }}
+                      onDone={() => { setIsDialogOpen(false); resetForm(); }}
+                    />
                   </TabsContent>
+
 
                   {/* Green API Tab */}
                   <TabsContent value="green_api" className="space-y-4 mt-4">
